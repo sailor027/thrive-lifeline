@@ -1,6 +1,6 @@
 # Website Migration
 
-last updated: 2024.05.21
+last updated: 2024.05.22
 
 - domain: thrivelifeline.org
 - host: Netlify
@@ -29,10 +29,6 @@ last updated: 2024.05.21
 **Plugins and Themes**:
 - Limited access to plugins and themes. Only Business and eCommerce plans allow installation of third-party plugins and themes.
 
-**Monetization**:
-- Monetization options are limited. Only available on Premium and higher plans, and subject to WordPress.com’s terms and conditions.
-- Includes options like WordAds, but you can't use third-party ad networks on lower-tier plans.
-
 **Support**:
 - Provides support depending on the plan. Premium and higher plans offer priority support.
 
@@ -51,9 +47,6 @@ last updated: 2024.05.21
 
 **Plugins and Themes**:
 - Full access to the vast repository of free and premium plugins and themes. You can install and customize any plugins or themes.
-
-**Monetization**:
-- Full control over monetization. You can run any ads, use any ad networks, set up an eCommerce store, and implement other monetization strategies without restrictions.
 
 **Support**:
 - Community support through forums, documentation, and third-party tutorials. No dedicated support unless provided by your hosting provider or theme/plugin developers.
