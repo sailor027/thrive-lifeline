@@ -1,6 +1,7 @@
 <?php
 // Path to the CSV file
 $csvFile = '/Users/khruc/GitHub/thrive-lifeline/thrive_resources.csv';
+// TODO: update the path to CSV file
 
 // Open the CSV file for reading
 $fileHandle = fopen($csvFile, 'r');

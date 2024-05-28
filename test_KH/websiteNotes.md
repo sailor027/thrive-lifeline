@@ -8,6 +8,11 @@
 - domain: thrivelifeline.org
 - host: Netlify
 
+### transfer domain
+1. unlock domain on Netlify and obtain authorisation code
+2. in WP, 'Add domain' > 'transfer domain'
+3. enter authorisation code
+
 ### Links
 - install php (https://www.geeksforgeeks.org/how-to-install-php-on-macos/)
 
