@@ -8,7 +8,7 @@ Author: Ko Horiuchi
 
 
 // path to the CSV file
-$csvFile = plugin_dir_path(__FILE__) . 'thrive_resources.csv';
+$csvFile = plugin_dir_path(__FILE__) . 'TESTthrive_resources.csv';
 // TODO: Current filepath is relative to this plugin directory. If error, update path to local CSV file
 
 // display CSV contents
@@ -36,7 +36,7 @@ function display_csv_contents() {
 
         // close file handle
         fclose($fileHandle);
-        
+
     } else {
         // error opening the file
         echo '<div class="notice notice-error is-dismissible">';
