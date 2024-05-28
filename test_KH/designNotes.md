@@ -7,11 +7,17 @@
 - theme 2:
   - white
   - black
- 
+- theme 3:
+  - 
+
+## layout
+- hero image
+
 ## features
-- [ ] quick exit - press ESC three times
-- [ ] tags
-- [ ] search within website
+- quick exit - press ESC three times
+  - write custom plugin
+- tags
+- search within website
 
 ***
 ## other websites
