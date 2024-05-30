@@ -1,24 +1,31 @@
 <?php
 /*
 Plugin Name: CSV to PHP
-Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/test_KH/CSVtoPHP
-Description: Test script to read a CSV file and display its contents in PHP.
-Version: 2.1.0
+Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
+Description: WP plugin to read a CSV file and display its contents in PHP.
+Version: 2.2.0
 Author: Ko Horiuchi
 */
 
 // Path to the CSV file relative to this plugin directory
 $resourcesFile = plugin_dir_path(__FILE__) . 'TESTthrive_resources.csv';
 // TODO: update CSV file name to actual file
+$docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
 
-// Register the shortcode
+// register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
 
 function displayResourcesShortcode() {
     global $resourcesFile;
 
-    // Buffer output to return it properly
+    // buffer output to return it properly
     ob_start();
+
+    // display search form
+    echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
+    echo '<input type="text" name="resources_search" placeholder="search database..." value="' . esc_attr($searchQuery) . '">';
+    echo '<input type="submit" value="Search">';
+    echo '</form>';
 
     // Open the CSV file for reading
     if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
@@ -55,35 +62,23 @@ function CSVtoPHP_pluginMenu() {
         'manage_options',           // Capability
         'csv-to-php',               // Menu slug
         'CSVtoPHP_displayInstructions', // Callback function
-        'dashicons-media-code',     // Icon URL
-        100                         // Position
     );
 
     add_action("load-$hook", 'csv_to_php_add_help_tab');
 }
 
 function CSVtoPHP_displayInstructions() {
-    ?>
-    <div class="wrap">
-        <h1>CSV to PHP Plugin Instructions</h1>
-        <h2>Plugin Information</h2>
-        <ul>
-            <li><strong>Version:</strong> 2.1.0</li> 
-            <!-- TODO: update version number -->
-        </ul>
-        <h2>How to Use This Plugin</h2>
-        <ol>
-            <li>Ensure the CSV file <code>TESTthrive_resources.csv</code> is placed in the plugin directory: <code><?php echo plugin_dir_path(__FILE__); ?></code>.</li>
-            <li>Activate the plugin through the 'Plugins' menu in WordPress.</li>
-            <li>To display the CSV contents on a page or post, use the shortcode <code>[displayResources]</code>.</li>
-            <li>Insert the shortcode in the content area where you want the CSV contents to appear.</li>
-        </ol>
-        <h2>Example</h2>
-        <p>Edit a page or post and add the following shortcode:</p>
-        <pre><code>[displayResources]</code></pre>
-        <p>The contents of the CSV file will be displayed as a table in the location where you added the shortcode.</p>
-    </div>
-    <?php
+    global $docsFile;
+
+    // Get the contents of the file
+    $fileContents = file_get_contents($docsFile);
+
+    // Check if the file was successfully read
+    if ($fileContents !== false) {
+        echo $fileContents;
+    } else {
+        return '<div class="notice notice-error is-dismissible">Error opening ' . $docsFile . '</div>';
+    }
 }
 
 function csv_to_php_add_help_tab() {
