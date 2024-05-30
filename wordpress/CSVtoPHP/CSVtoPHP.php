@@ -18,6 +18,9 @@ add_shortcode('displayResources', 'displayResourcesShortcode');
 function displayResourcesShortcode() {
     global $resourcesFile;
 
+    // handle the search query
+    $searchQuery = isset($_GET['resources_search']) ? sanitize_text_field($_GET['resources_search']) : '';
+
     // buffer output to return it properly
     ob_start();
 
@@ -29,10 +32,15 @@ function displayResourcesShortcode() {
 
     // Open the CSV file for reading
     if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
-        echo '<table style="border-collapse: collapse; width: 100%;">';
+        echo '<table style="border-collapse: collapse; width: 80%;">';
 
-        // Read the CSV file line by line
+        // read the CSV file line by line
         while (($row = fgetcsv($fileHandle)) !== false) {
+            // If there's a search query, filter the rows
+            if ($searchQuery && stripos(implode(' ', $row), $searchQuery) === false) {
+                continue;
+            }
+
             echo '<tr>';
             foreach ($row as $cell) {
                 echo '<td style="border: 1px solid #ddd; padding: 8px;">' . htmlspecialchars($cell) . '</td>';
