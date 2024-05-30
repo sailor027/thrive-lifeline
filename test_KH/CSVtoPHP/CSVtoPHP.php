@@ -9,6 +9,7 @@ Author: Ko Horiuchi
 
 // Path to the CSV file relative to this plugin directory
 $resourcesFile = plugin_dir_path(__FILE__) . 'TESTthrive_resources.csv';
+// TODO: update CSV file name to actual file
 
 // Register the shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
@@ -65,6 +66,11 @@ function CSVtoPHP_displayInstructions() {
     ?>
     <div class="wrap">
         <h1>CSV to PHP Plugin Instructions</h1>
+        <h2>Plugin Information</h2>
+        <ul>
+            <li><strong>Version:</strong> 2.1.0</li> 
+            <!-- TODO: update version number -->
+        </ul>
         <h2>How to Use This Plugin</h2>
         <ol>
             <li>Ensure the CSV file <code>TESTthrive_resources.csv</code> is placed in the plugin directory: <code><?php echo plugin_dir_path(__FILE__); ?></code>.</li>
