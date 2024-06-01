@@ -3,14 +3,21 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.2.0
+Version: 2.3.0
 Author: Ko Horiuchi
 */
 
 // Path to the CSV file relative to this plugin directory
 $resourcesFile = plugin_dir_path(__FILE__) . 'TESTthrive_resources.csv';
-// TODO: update CSV file name to actual file
+//TODO: update CSV file name to actual file
+//TODO: delte first few rows of the CSV file
 $docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
+
+// enqueue custom styles
+function CSVtoPHP_enqueueStyles() {
+    wp_enqueue_style('csv-to-php-styles', plugin_dir_url(__FILE__) . 'CSVtoPHP.css');
+}
+wq_add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
 
 // register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
@@ -32,18 +39,38 @@ function displayResourcesShortcode() {
 
     // Open the CSV file for reading
     if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
-        echo '<table style="border-collapse: collapse; width: 80%;">';
+        echo '<table class="csv-table">';
+        echo '
+        <tr>
+            <th>Resource</th>
+            <th>Hotline Phone/Text</th>
+            <th>Resource Description</th>
+            <th>Keywords</th>
+            <th>Region/Language</th>
+        </tr>
+        ';
+        
+        // skip first 2 rows
+        $rowCount = 0;
+        while ($rowCount < 2 && fgetcsv($fileHandle) !== false) {
+            $rowCount++;
+        }
 
         // read the CSV file line by line
         while (($row = fgetcsv($fileHandle)) !== false) {
-            // If there's a search query, filter the rows
+            // skip commented rows
+            if (isset($row[0]) && strpos($row[0], '#') === 0) {
+                continue;
+            }
+            // if there's a search query, filter the rows
             if ($searchQuery && stripos(implode(' ', $row), $searchQuery) === false) {
                 continue;
             }
 
             echo '<tr>';
-            foreach ($row as $cell) {
-                echo '<td style="border: 1px solid #ddd; padding: 8px;">' . htmlspecialchars($cell) . '</td>';
+            // read only the first 5 columns
+            for ($i = 0; $i < 5; $i++) {
+                echo '<td>' . htmlspecialchars($row[$i] ?? '') . '</td>';
             }
             echo '</tr>';
         }
@@ -96,7 +123,7 @@ function csv_to_php_add_help_tab() {
         'title'   => 'Usage Instructions',
         'content' => '<h2>CSV to PHP Plugin Instructions</h2>
                         <ol>
-                            <li>Ensure the CSV file <code>TESTthrive_resources.csv</code> is placed in the plugin directory: <code>' . plugin_dir_path(__FILE__) . '</code>.</li>
+                            <li>Ensure the CSV file <span class="code">TESTthrive_resources.csv</code> is placed in the plugin directory: <code>' . plugin_dir_path(__FILE__) . '</code>.</li>
                             <li>Activate the plugin through the "Plugins" menu in WordPress.</li>
                             <li>To display the CSV contents on a page or post, use the shortcode <code>[displayResources]</code>.</li>
                             <li>Insert the shortcode in the content area where you want the CSV contents to appear.</li>
