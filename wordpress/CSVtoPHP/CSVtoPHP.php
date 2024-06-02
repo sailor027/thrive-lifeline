@@ -39,6 +39,7 @@ function displayResourcesShortcode() {
 
     // Open the CSV file for reading
     if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
+        echo '<div style="overflow-x:auto;">';
         echo '<table class="csv-table">';
         echo '
         <tr>
@@ -70,11 +71,23 @@ function displayResourcesShortcode() {
             echo '<tr>';
             // read only the first 5 columns
             for ($i = 0; $i < 5; $i++) {
-                echo '<td>' . htmlspecialchars($row[$i] ?? '') . '</td>';
+                if ($i == 3) {
+                    // format keywords as clickable tags
+                    $keywords = explode(',', $row[$i]);
+                    echo '<td>';
+                    foreach ($keywords as $keyword) {
+                        $keyword = trim($keyword);
+                        echo '<a href="" class="tag">' . htmlspecialchars($keyword) . '</a> ';
+                    }
+                    echo '</td>';
+                } else {
+                    echo '<td>' . htmlspecialchars(isset($row[$i]) ? $row[$i] : '') . '</td>';
+                }
             }
             echo '</tr>';
         }
-        echo '</table>';
+        echo '</table>';    
+        echo '</div>';
 
         // Close the file handle
         fclose($fileHandle);

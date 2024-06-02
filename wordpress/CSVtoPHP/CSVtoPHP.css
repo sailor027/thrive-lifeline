@@ -1,13 +1,25 @@
+/* default values */
+:root {
+    --font: 'Noto Sans', sans-serif;
+    --mono: 'Fira Code', monospace;
+    --bk: #252525;
+    --prp: #65437C;
+    --prp2: #AB8FC0;
+    --gy: #f0f0f0;
+}
+
+
 /* text */
 body {
-    font-family: sans-serif;
+    font-family: var(--font);
     font-size: 12pt;
+    color: var(--bk);
     line-height: 1.2;
 }
 code {
-    font-family: 'Fira Code', monospace;
+    font-family: var(--mono);
     color: rgb(80, 80, 80);
-    background-color: rgb(240, 240, 240);
+    background-color: #f0f0f0;
     padding: 2px 5px;
     font-size: 90%;
 }
@@ -16,25 +28,66 @@ date {
     font-style: italic;
     text-align: right;
 }
+a.tag {
+    color: var(--bk);
+    background-color: var(--prp2);
+    padding: 2px 5px;
+}
+a.tag:hover a.tag:active {
+    color: white;
+    background-color: var(--prp);
+    font-weight: bold;
+    padding: 2px 5px;
+}
 
 /* table */
 table.csv-table {
+    /* resources table */
     border: 0;
     width: 80%;
     border-bottom: 1px solid #ddd;
-    overflow-x: auto;
+    /* overflow-x: auto; */
 }
 table.csv-table th {
+    /* header */
     height: 50px;
     vertical-align: middle;
 }
 table.csv-table tr:hover {
-    background-color: #AB8FC0;
+    background-color: var(--prp2);
 }
 table.csv-table td {
+    /* cell */
     vertical-align: top;
     padding: 5px; 
+    word-wrap: normal;
 }
+table.csv-table td:nth-child(1) {
+    /* resource */
+    width: 20%;
+    min-width: 110px;
+}
+table.csv-table td:nth-child(2) {
+    /* hotline phone/text */
+    width: 15%;
+    min-width: 100px;
+}
+table.csv-table td:nth-child(3) {
+    /* resource description */
+    width: 40%;
+    min-width: 200px;
+}
+table.csv-table td:nth-child(4) {
+    /* keywords */
+    width: 15%;
+    min-width: 100px;
+}
+table.csv-table td:nth-child(5) {
+    /* region/language */
+    width: 10%;
+    min-width: 75px;
+}
+
 
 table.date {
     border: 0;
