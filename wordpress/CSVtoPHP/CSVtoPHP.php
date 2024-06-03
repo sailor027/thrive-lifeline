@@ -3,11 +3,17 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.3.0
+Version: 2.3.1
 Author: Ko Horiuchi
 */
 
-// Path to the CSV file relative to this plugin directory
+// enable error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+
+// path to the CSV file relative to this plugin directory
 $resourcesFile = plugin_dir_path(__FILE__) . 'TESTthrive_resources.csv';
 //TODO: update CSV file name to actual file
 //TODO: delte first few rows of the CSV file
@@ -17,7 +23,7 @@ $docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
 function CSVtoPHP_enqueueStyles() {
     wp_enqueue_style('csv-to-php-styles', plugin_dir_url(__FILE__) . 'CSVtoPHP.css');
 }
-wq_add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
+add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
 
 // register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
