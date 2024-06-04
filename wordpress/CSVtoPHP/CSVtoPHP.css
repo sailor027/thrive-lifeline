@@ -2,10 +2,10 @@
 :root {
     --font: 'Noto Sans', sans-serif;
     --mono: 'Fira Code', monospace;
-    --bk: #252525;
+    --bk: #000000;
     --prp: #65437C;
     --prp2: #AB8FC0;
-    --gy: #f0f0f0;
+    --gy: #e0e0e0;
 }
 
 
@@ -18,9 +18,11 @@ body {
 }
 code {
     font-family: var(--mono);
+    font-size: 10pt;
     color: rgb(80, 80, 80);
     background-color: #f0f0f0;
     padding: 2px 5px;
+    border-radius: 5px;
     font-size: 90%;
 }
 date {
@@ -29,39 +31,59 @@ date {
     text-align: right;
 }
 a.tag {
+    font-family: var(--mono) !important;
     color: var(--bk);
-    background-color: var(--prp2);
+    font-size: 10pt;
+    display: inline-block;
+    background-color: var(--gy);
+    border-radius: 5px;
     padding: 2px 5px;
+    margin: 3px;
+    text-decoration: none;
 }
-a.tag:hover a.tag:active {
-    color: white;
+a.tag:hover {
+    color: white !important;
     background-color: var(--prp);
-    font-weight: bold;
     padding: 2px 5px;
+    margin: 3px;
+    text-decoration: none;
 }
 
 /* table */
 table.csv-table {
     /* resources table */
-    border: 0;
+    border-collapse: collapse;
     width: 80%;
-    border-bottom: 1px solid #ddd;
-    /* overflow-x: auto; */
+    /* border-bottom: 1px solid #ddd; */
+    overflow-x: auto;
+}
+table.csv-table tr {
+    border-bottom: 1px solid #ddd !important;
+}
+table.csv-table tr:hover:not(:first-child) {
+    background-color: var(--prp2);
 }
 table.csv-table th {
     /* header */
+    background-color: var(--gy) !important;
     height: 50px;
-    vertical-align: middle;
-}
-table.csv-table tr:hover {
-    background-color: var(--prp2);
+    vertical-align: bottom;
+    text-align: left;
+    padding: 0 20px 10px 5px;
 }
 table.csv-table td {
     /* cell */
     vertical-align: top;
-    padding: 5px; 
-    word-wrap: normal;
+    padding: 10px; 
+    text-wrap: wrap;
 }
+/* table.csv-table th:first-child, table.csv-table td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: white;
+    border-right: 2px solid var(--gy);
+    z-index: 1;
+} */
 table.csv-table td:nth-child(1) {
     /* resource */
     width: 20%;
@@ -81,6 +103,8 @@ table.csv-table td:nth-child(4) {
     /* keywords */
     width: 15%;
     min-width: 100px;
+    padding-left: 7px !important;
+    display: inline-block;
 }
 table.csv-table td:nth-child(5) {
     /* region/language */
