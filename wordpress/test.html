@@ -6,7 +6,13 @@
 </head>
 <body>
     <h2>csv table preview</h2>
-    <div style="overflow-x: auto;"></div>
+    <div style="overflow-x: auto;">
+        <form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '" class="resources-search">
+            <input type="text" name="resources_search" placeholder="search database...">
+            <input type="image" src="./CSVtoPHP/media/search.svg" alt="Search" class="img">
+        </form>
+    
+    
         <table class="csv-table">
             <tr>
                 <th>Resource</th>

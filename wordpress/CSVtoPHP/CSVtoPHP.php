@@ -18,6 +18,7 @@ $resourcesFile = plugin_dir_path(__FILE__) . 'TESTthrive_resources.csv';
 //TODO: update CSV file name to actual file
 //TODO: delte first few rows of the CSV file
 $docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
+$searchImg = plugin_dir_path(__FILE__) . '/media/search.svg';
 
 // enqueue custom styles
 function CSVtoPHP_enqueueStyles() {
@@ -38,9 +39,9 @@ function displayResourcesShortcode() {
     ob_start();
 
     // display search form
-    echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
+    echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '" class="resources-search">';
     echo '<input type="text" name="resources_search" placeholder="search database..." value="' . esc_attr($searchQuery) . '">';
-    echo '<input type="submit" value="Search">';
+    echo '<input type="image" src="' . $searchImg . '" alt="Search" class="img">';
     echo '</form>';
 
     // Open the CSV file for reading
