@@ -3,7 +3,7 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.4.0
+Version: 2.5.0
 Author: Ko Horiuchi
 */
 
@@ -14,11 +14,9 @@ error_reporting(E_ALL);
 
 
 // path to the CSV file relative to this plugin directory
-$resourcesFile = plugin_dir_path(__FILE__) . 'TESTthrive_resources.csv';
-//TODO: update CSV file name to actual file
-//TODO: delte first few rows of the CSV file
+$resourcesFile = plugin_dir_path(__FILE__) . 'crisisResources.csv';
 $docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
-$searchImg = plugin_dir_path(__FILE__) . '/media/search.svg';
+$searchImg = plugin_dir_url(__FILE__) . 'media/search.svg';
 
 // enqueue custom styles
 function CSVtoPHP_enqueueStyles() {
@@ -39,15 +37,18 @@ function displayResourcesShortcode() {
     $currentPage = isset($_GET['page']) ? intval($_GET['page']) : 1;
     $rowsPerPage = 10;
     $startRow = ($currentPage - 1) * $rowsPerPage;
+    $paginationRange = 2; // Number of pagination links to show around the current page
 
     // buffer output to return it properly
     ob_start();
 
-    // display search form
+    // display search form in a container aligned to the right
+    echo '<div class="resources-search-container" style="text-align: right;">';
     echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '" class="resources-search">';
-    echo '<input type="text" name="resources_search" placeholder="search database..." value="' . esc_attr($searchQuery) . '">';
-    echo '<input type="image" src="' . plugin_dir_url(__FILE__) . 'media/search.svg" alt="Search" class="img">';
+    echo '<input type="text" name="resources_search" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
+    echo '<input type="image" src="' . $searchImg . '" alt="Search" class="img">';
     echo '</form>';
+    echo '</div>';
 
     // Open the CSV file for reading
     if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
@@ -63,9 +64,9 @@ function displayResourcesShortcode() {
         </tr>
         ';
         
-        // skip first 2 rows
+        // skip first row
         $rowCount = 0;
-        while ($rowCount < 2 && fgetcsv($fileHandle) !== false) {
+        while ($rowCount < 1 && fgetcsv($fileHandle) !== false) {
             $rowCount++;
         }
 
@@ -120,13 +121,22 @@ function displayResourcesShortcode() {
         if ($currentPage > 1) {
             echo '<a href="' . add_query_arg('page', $currentPage - 1) . '">&laquo; Previous</a>';
         }
-        for ($page = 1; $page <= $totalPages; $page++) {
+        
+        // Show pagination links
+        for ($page = max(1, $currentPage - $paginationRange); $page <= min($totalPages, $currentPage + $paginationRange); $page++) {
             if ($page == $currentPage) {
                 echo '<span class="current-page">' . $page . '</span>';
             } else {
                 echo '<a href="' . add_query_arg('page', $page) . '">' . $page . '</a>';
             }
         }
+        
+        // Show first and last page links if necessary
+        if ($currentPage + $paginationRange < $totalPages) {
+            echo '<span>...</span>';
+            echo '<a href="' . add_query_arg('page', $totalPages) . '">' . $totalPages . '</a>';
+        }
+        
         if ($currentPage < $totalPages) {
             echo '<a href="' . add_query_arg('page', $currentPage + 1) . '">Next &raquo;</a>';
         }
@@ -142,7 +152,6 @@ function displayResourcesShortcode() {
     // Return the buffered content as a string
     return ob_get_clean();
 }
-
 
 // Add a menu item to the plugin settings page
 add_action('admin_menu', 'CSVtoPHP_pluginMenu');
@@ -169,26 +178,7 @@ function CSVtoPHP_displayInstructions() {
     if ($fileContents !== false) {
         echo $fileContents;
     } else {
-        return '<div class="notice notice-error is-dismissible">Error opening ' . $docsFile . '</div>';
+        return '<div class="notice notice-error is-dismissible">Error opening ' . esc_html($docsFile) . '</div>';
     }
-}
-
-function csv_to_php_add_help_tab() {
-    $screen = get_current_screen();
-    $screen->add_help_tab(array(
-        'id'      => 'csv_to_php_help_tab',
-        'title'   => 'Usage Instructions',
-        'content' => '<h2>CSV to PHP Plugin Instructions</h2>
-                        <ol>
-                            <li>Ensure the CSV file <span class="code">TESTthrive_resources.csv</code> is placed in the plugin directory: <code>' . plugin_dir_path(__FILE__) . '</code>.</li>
-                            <li>Activate the plugin through the "Plugins" menu in WordPress.</li>
-                            <li>To display the CSV contents on a page or post, use the shortcode <code>[displayResources]</code>.</li>
-                            <li>Insert the shortcode in the content area where you want the CSV contents to appear.</li>
-                        </ol>
-                        <h2>Example</h2>
-                        <p>Edit a page or post and add the following shortcode:</p>
-                        <pre><code>[displayResources]</code></pre>
-                        <p>The contents of the CSV file will be displayed as a table in the location where you added the shortcode.</p>'
-    ));
 }
 ?>

@@ -50,10 +50,12 @@ a.tag:hover {
 }
 
 /* forms */
-form.resources-search {
-    width: auto;
-    float: right;
+.resources-search-container {
+    text-align: right;
     margin: 10px;
+}
+.resources-search {
+    display: inline-block;
 }
 form.resources-search input[type="text"] {
     font-size: 12pt;
@@ -63,7 +65,8 @@ form.resources-search input[type="text"] {
     padding: 0 20px;
     vertical-align: middle;
 }
-.img {
+.resources-search input[type="image"] {
+    color: var(--prp);
     vertical-align: middle;
 }
 
@@ -145,4 +148,19 @@ table.date td:nth-child(2) {
     width: 50%;
     text-align: right;
     font-style: italic;
+}
+
+/* pagination */
+.pagination a,
+.pagination span {
+    display: inline-block;
+    padding: 10px 15px;
+    margin: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-decoration: none;
+}
+.pagination .current-page, .pagination a:hover {
+    color: white;
+    background-color:var(--prp);
 }
