@@ -3,9 +3,10 @@
     --font: 'Noto Sans', sans-serif;
     --mono: 'Fira Code', monospace;
     --bk: #000000;
-    --prp: #65437C;
-    --prp2: #AB8FC0;
-    --gy: #e0e0e0;
+    --grn: #BFCAC6;
+    --grn2: #68765F;
+    --org: #EDB16B;
+    --gy: #BFCAC6;
 }
 
 
@@ -43,7 +44,7 @@ a.tag {
 }
 a.tag:hover {
     color: white !important;
-    background-color: var(--prp);
+    background-color: var(--grn);
     padding: 2px 5px;
     margin: 3px;
     text-decoration: none;
@@ -60,13 +61,13 @@ a.tag:hover {
 form.resources-search input[type="text"] {
     font-size: 12pt;
     height: 40px;
-    border: 3px solid var(--prp);
+    border: 3px solid var(--grn2);
     border-radius: 40px;
     padding: 0 20px;
     vertical-align: middle;
 }
 .resources-search input[type="image"] {
-    color: var(--prp);
+    color: var(--grn2);
     vertical-align: middle;
 }
 
@@ -81,7 +82,7 @@ table.csv-table tr {
     border-bottom: 1px solid #ddd;
 }
 table.csv-table tr:hover:not(:first-child) {
-    background-color: var(--prp2);
+    background-color: var(--grn2);
 }
 table.csv-table th {
     /* header */
@@ -162,5 +163,5 @@ table.date td:nth-child(2) {
 }
 .pagination .current-page, .pagination a:hover {
     color: white;
-    background-color:var(--prp);
+    background-color:var(--grn);
 }

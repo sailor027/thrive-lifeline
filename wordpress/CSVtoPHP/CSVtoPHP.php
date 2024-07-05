@@ -3,7 +3,7 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.5.0
+Version: 2.5.2
 Author: Ko Horiuchi
 */
 
@@ -16,7 +16,7 @@ error_reporting(E_ALL);
 // path to the CSV file relative to this plugin directory
 $resourcesFile = plugin_dir_path(__FILE__) . 'crisisResources.csv';
 $docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
-$searchImg = plugin_dir_url(__FILE__) . 'media/search.svg';
+$searchImg = plugin_dir_path(__FILE__) . '/media/search.svg';
 
 // enqueue custom styles
 function CSVtoPHP_enqueueStyles() {
@@ -119,7 +119,7 @@ function displayResourcesShortcode() {
         // Pagination controls
         echo '<div class="pagination">';
         if ($currentPage > 1) {
-            echo '<a href="' . add_query_arg('page', $currentPage - 1) . '">&laquo; Previous</a>';
+            echo '<a href="' . esc_url(add_query_arg(array('page' => $currentPage - 1))) . '">&laquo; Previous</a>';
         }
         
         // Show pagination links
@@ -127,18 +127,18 @@ function displayResourcesShortcode() {
             if ($page == $currentPage) {
                 echo '<span class="current-page">' . $page . '</span>';
             } else {
-                echo '<a href="' . add_query_arg('page', $page) . '">' . $page . '</a>';
+                echo '<a href="' . esc_url(add_query_arg(array('page' => $page))) . '">' . $page . '</a>';
             }
         }
         
         // Show first and last page links if necessary
         if ($currentPage + $paginationRange < $totalPages) {
             echo '<span>...</span>';
-            echo '<a href="' . add_query_arg('page', $totalPages) . '">' . $totalPages . '</a>';
+            echo '<a href="' . esc_url(add_query_arg(array('page' => $totalPages))) . '">' . $totalPages . '</a>';
         }
         
         if ($currentPage < $totalPages) {
-            echo '<a href="' . add_query_arg('page', $currentPage + 1) . '">Next &raquo;</a>';
+            echo '<a href="' . esc_url(add_query_arg(array('page' => $currentPage + 1))) . '">Next &raquo;</a>';
         }
         echo '</div>';
 
