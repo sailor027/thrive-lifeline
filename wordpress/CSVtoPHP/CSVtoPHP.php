@@ -3,50 +3,48 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.5.2
+Version: 2.6.4
 Author: Ko Horiuchi
 */
-
-// enable error reporting
+// Enable error reporting
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-
-// path to the CSV file relative to this plugin directory
+// Path to the CSV file relative to this plugin directory
 $resourcesFile = plugin_dir_path(__FILE__) . 'crisisResources.csv';
 $docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
-$searchImg = plugin_dir_path(__FILE__) . '/media/search.svg';
+$searchImg = plugin_dir_path(__FILE__) . '/media/search.svg'; //do not change this
 
-// enqueue custom styles
+// Enqueue custom styles
 function CSVtoPHP_enqueueStyles() {
     wp_enqueue_style('csv-to-php-styles', plugin_dir_url(__FILE__) . 'CSVtoPHP.css');
 }
 add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
 
-// register shortcode
+// Register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
 
 function displayResourcesShortcode() {
-    global $resourcesFile;
+    global $resourcesFile, $searchImg;
 
-    // handle the search query
-    $searchQuery = isset($_GET['resources_search']) ? sanitize_text_field($_GET['resources_search']) : '';
+    // Handle the search query
+    $searchQuery = isset($_GET['kw']) ? sanitize_text_field($_GET['kw']) : '';
 
-    // handle pagination
-    $currentPage = isset($_GET['page']) ? intval($_GET['page']) : 1;
+    // Handle pagination
+    $currentPage = isset($_GET['pg']) ? intval($_GET['pg']) : 1;
     $rowsPerPage = 10;
     $startRow = ($currentPage - 1) * $rowsPerPage;
     $paginationRange = 2; // Number of pagination links to show around the current page
+    // Buffer output to return it properly
 
-    // buffer output to return it properly
     ob_start();
 
-    // display search form in a container aligned to the right
-    echo '<div class="resources-search-container" style="text-align: right;">';
+    // Display search form in a container
+    echo '<div class="resources-search-container">';
     echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '" class="resources-search">';
-    echo '<input type="text" name="resources_search" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
-    echo '<input type="image" src="' . $searchImg . '" alt="Search" class="img">';
+    echo '<input type="text" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
+    echo '<input type="image" src="' . esc_url($searchImg) . '" alt="Search" class="img">'; // Use $searchImg for image source
     echo '</form>';
     echo '</div>';
 
@@ -64,7 +62,7 @@ function displayResourcesShortcode() {
         </tr>
         ';
         
-        // skip first row
+        // Skip first row
         $rowCount = 0;
         while ($rowCount < 1 && fgetcsv($fileHandle) !== false) {
             $rowCount++;
@@ -73,17 +71,25 @@ function displayResourcesShortcode() {
         // Initialize an array to store all rows
         $allRows = [];
         
-        // read the CSV file line by line
+        // Read the CSV file line by line
         while (($row = fgetcsv($fileHandle)) !== false) {
-            // skip commented rows
+            // Skip commented rows
             if (isset($row[0]) && strpos($row[0], '#') === 0) {
                 continue;
             }
-            // if there's a search query, filter the rows
-            if ($searchQuery && stripos(implode(' ', $row), $searchQuery) === false) {
-                continue;
+            // If there's a search query, filter the rows
+            if ($searchQuery) {
+                $match = false;
+                foreach ($row as $column) {
+                    if (stripos($column, $searchQuery) !== false) {
+                        $match = true;
+                        break;
+                    }
+                }
+                if (!$match) {
+                    continue;
+                }
             }
-
             $allRows[] = $row;
         }
         
@@ -95,16 +101,16 @@ function displayResourcesShortcode() {
             echo '<tr>';
             // Read only the first 5 columns, and hyperlink the first column with the link from the seventh column
             for ($i = 0; $i < 5; $i++) {
-                if ($i == 0 && !empty($row[6])) {
+                if ($i == 0 && !empty($row[5])) {
                     // Wrap the first column's content in an anchor tag
-                    echo '<td><a href="' . esc_url($row[6]) . '">' . htmlspecialchars($row[$i]) . '</a></td>';
+                    echo '<td><a href="' . esc_url($row[5]) . '">' . htmlspecialchars($row[$i]) . '</a></td>';
                 } elseif ($i == 3) {
                     // Format keywords as clickable tags
                     $keywords = explode(',', $row[$i]);
                     echo '<td>';
                     foreach ($keywords as $keyword) {
                         $keyword = trim($keyword);
-                        echo '<a href="?resources_search=' . urlencode($keyword) . '" class="tag">' . htmlspecialchars($keyword) . '</a> ';
+                        echo '<a href="?kw=' . urlencode($keyword) . '" class="tag">' . htmlspecialchars($keyword) . '</a> ';
                     }
                     echo '</td>';
                 } else {
@@ -118,28 +124,40 @@ function displayResourcesShortcode() {
 
         // Pagination controls
         echo '<div class="pagination">';
-        if ($currentPage > 1) {
-            echo '<a href="' . esc_url(add_query_arg(array('page' => $currentPage - 1))) . '">&laquo; Previous</a>';
+        // echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
+        echo '<form method="get" action="' . esc_url(remove_query_arg('pg', $_SERVER['REQUEST_URI'])) . '">';
+
+        // Preserve all other GET parameters as hidden inputs
+        foreach ($_GET as $key => $value) {
+            if ($key != 'page') { // Skip 'page' parameter to avoid duplication
+                echo '<input type="hidden" name="'. esc_attr($key) .'" value="'. esc_attr($value) .'">';
+            }
         }
-        
+
+        if ($currentPage > 1) {
+            echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage - 1) . '">&laquo; Previous</button>';
+        }
+
         // Show pagination links
         for ($page = max(1, $currentPage - $paginationRange); $page <= min($totalPages, $currentPage + $paginationRange); $page++) {
             if ($page == $currentPage) {
                 echo '<span class="current-page">' . $page . '</span>';
             } else {
-                echo '<a href="' . esc_url(add_query_arg(array('page' => $page))) . '">' . $page . '</a>';
+                echo '<button type="submit" name="pg" class="page-n" value="' . $page . '">' . $page . '</button>';
             }
         }
-        
+
         // Show first and last page links if necessary
         if ($currentPage + $paginationRange < $totalPages) {
             echo '<span>...</span>';
-            echo '<a href="' . esc_url(add_query_arg(array('page' => $totalPages))) . '">' . $totalPages . '</a>';
+            echo '<button type="submit" name="pg" value="' . $totalPages . '">' . $totalPages . '</button>';
         }
         
         if ($currentPage < $totalPages) {
-            echo '<a href="' . esc_url(add_query_arg(array('page' => $currentPage + 1))) . '">Next &raquo;</a>';
+            echo '<button type="submit" name="pg" value="' . ($currentPage + 1) . '">Next &raquo;</button>';
         }
+
+        echo '</form>';
         echo '</div>';
 
         // Close the file handle
@@ -155,7 +173,6 @@ function displayResourcesShortcode() {
 
 // Add a menu item to the plugin settings page
 add_action('admin_menu', 'CSVtoPHP_pluginMenu');
-
 function CSVtoPHP_pluginMenu() {
     $hook = add_menu_page(
         'CSV to PHP Instructions',  // Page title
@@ -164,16 +181,12 @@ function CSVtoPHP_pluginMenu() {
         'csv-to-php',               // Menu slug
         'CSVtoPHP_displayInstructions', // Callback function
     );
-
     add_action("load-$hook", 'csv_to_php_add_help_tab');
 }
-
 function CSVtoPHP_displayInstructions() {
     global $docsFile;
-
     // Get the contents of the file
     $fileContents = file_get_contents($docsFile);
-
     // Check if the file was successfully read
     if ($fileContents !== false) {
         echo $fileContents;

@@ -3,12 +3,11 @@
     --font: 'Noto Sans', sans-serif;
     --mono: 'Fira Code', monospace;
     --bk: #000000;
-    --grn: #BFCAC6;
-    --grn2: #68765F;
-    --org: #EDB16B;
+    --gn: #BFCAC6;
+    --gn2: #68765F;
+    --or: #EDB16B;
     --gy: #BFCAC6;
 }
-
 
 /* text */
 body {
@@ -17,6 +16,7 @@ body {
     color: var(--bk);
     line-height: 1.2;
 }
+
 code {
     font-family: var(--mono);
     font-size: 10pt;
@@ -26,25 +26,24 @@ code {
     border-radius: 5px;
     font-size: 90%;
 }
-date {
-    color: rgb(80, 80, 80);
-    font-style: italic;
-    text-align: right;
-}
+
 a.tag {
     font-family: var(--mono) !important;
     color: var(--bk);
     font-size: 10pt;
     display: inline-block;
     background-color: var(--gy);
+    width: min-content;
     border-radius: 5px;
     padding: 2px 5px;
     margin: 3px;
     text-decoration: none;
+    transition-duration: 0.5s;
 }
+
 a.tag:hover {
     color: white !important;
-    background-color: var(--grn);
+    background-color: var(--gn2);
     padding: 2px 5px;
     margin: 3px;
     text-decoration: none;
@@ -55,85 +54,96 @@ a.tag:hover {
     text-align: right;
     margin: 10px;
 }
+
 .resources-search {
     display: inline-block;
 }
+
 form.resources-search input[type="text"] {
     font-size: 12pt;
     height: 40px;
-    border: 3px solid var(--grn2);
+    border: 3px solid var(--gn2);
     border-radius: 40px;
     padding: 0 20px;
     vertical-align: middle;
 }
+
 .resources-search input[type="image"] {
-    color: var(--grn2);
+    color: var(--gn2);
     vertical-align: middle;
 }
 
 /* table */
 table.csv-table {
-    /* resources table */
     border-collapse: collapse;
-    width: 90%;
-    /* border-bottom: 1px solid #ddd; */
+    width: 100%;
 }
 table.csv-table tr {
-    border-bottom: 1px solid #ddd;
-}
-table.csv-table tr:hover:not(:first-child) {
-    background-color: var(--grn2);
+    border-bottom: 1px solid var(--gn2);
+    transition-duration: 0.5s;
 }
 table.csv-table th {
-    /* header */
     background-color: var(--gy) !important;
     height: 50px;
     vertical-align: bottom;
     text-align: left;
     padding: 0 20px 10px 5px;
 }
+table.csv-table tr:hover:not(:first-child) {
+    background-color: var(--or);
+}
 table.csv-table td {
-    /* cell */
     vertical-align: top;
-    padding: 10px; 
-    text-wrap: wrap;
+    padding: 10px;
 }
-/* table.csv-table th:first-child, table.csv-table td:first-child {
-    position: sticky;
-    left: 0;
-    background-color: white;
-    border-right: 2px solid var(--gy);
-    z-index: 1;
-} */
-table.csv-table td:nth-child(1) {
-    /* resource */
-    width: 20%;
-    min-width: 110px;
-}
-table.csv-table td:nth-child(2) {
-    /* hotline phone/text */
-    width: 15%;
-    min-width: 100px;
-}
-table.csv-table td:nth-child(3) {
-    /* resource description */
-    width: 40%;
-    min-width: 200px;
-}
-table.csv-table td:nth-child(4) {
-    /* keywords */
-    width: 15%;
-    min-width: 100px;
-    padding-left: 7px !important;
+
+/* pagination */
+.pagination form {
     display: inline-block;
 }
-table.csv-table td:nth-child(5) {
-    /* region/language */
-    width: 10%;
-    min-width: 75px;
+button.page-n {
+    font-size: 0.9em;
+    color: var(--bk);
+    background-color: var(--gn);
+    border: 1px solid var(--gn2);
+    width: 35px;
+    height: 35px;
+    border-radius: 35px;
+    /* padding: 10px 20px; */
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    /* margin: 2px 1px; */
+    /* cursor: pointer; */
+    transition-duration: 0.5s;
+}
+button.page-np {
+    font-size: 0.9em;
+    color: var(--bk);
+    background-color: var(--gn);
+    border: 1px solid var(--gn2);
+    width: 35px;
+    height: 35px;
+    border-radius: 35px;
+    /* padding: 10px 20px; */
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    /* margin: 2px 1px; */
+    /* cursor: pointer; */
+    transition-duration: 0.5s;
 }
 
+.pagination .current-page, button.page-n:hover, button.page-np:hover {
+    color: white;
+    background-color: var(--gn2);
+}
 
+.pagination span {
+    margin: 0 5px;
+}
+
+/* documentation */
 table.date {
     border: 0;
     width: 100%;
@@ -149,19 +159,4 @@ table.date td:nth-child(2) {
     width: 50%;
     text-align: right;
     font-style: italic;
-}
-
-/* pagination */
-.pagination a,
-.pagination span {
-    display: inline-block;
-    padding: 10px 15px;
-    margin: 5px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    text-decoration: none;
-}
-.pagination .current-page, .pagination a:hover {
-    color: white;
-    background-color:var(--grn);
 }
