@@ -3,7 +3,7 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.6.4
+Version: 2.7.0
 Author: Ko Horiuchi
 */
 // Enable error reporting
@@ -30,6 +30,7 @@ function displayResourcesShortcode() {
 
     // Handle the search query
     $searchQuery = isset($_GET['kw']) ? sanitize_text_field($_GET['kw']) : '';
+    $searchTerms = array_filter(explode(' ', $searchQuery)); // Split search query into individual terms
 
     // Handle pagination
     $currentPage = isset($_GET['pg']) ? intval($_GET['pg']) : 1;
@@ -54,11 +55,10 @@ function displayResourcesShortcode() {
         echo '<table class="csv-table">';
         echo '
         <tr>
-            <th>Resource</th>
-            <th>Hotline Phone/Text</th>
-            <th>Resource Description</th>
-            <th>Keywords</th>
-            <th>Region/Language</th>
+            <th width="20%">Resource</th>
+            <th width="15%">Hotline Phone/Text</th>
+            <th width="50%">Resource Description</th>
+            <th width="15%">Keywords</th>
         </tr>
         ';
         
@@ -71,6 +71,27 @@ function displayResourcesShortcode() {
         // Initialize an array to store all rows
         $allRows = [];
         
+        // // Read the CSV file line by line
+        // while (($row = fgetcsv($fileHandle)) !== false) {
+        //     // Skip commented rows
+        //     if (isset($row[0]) && strpos($row[0], '#') === 0) {
+        //         continue;
+        //     }
+        //     // If there's a search query, filter the rows
+        //     if ($searchQuery) {
+        //         $match = false;
+        //         foreach ($row as $column) {
+        //             if (stripos($column, $searchQuery) !== false) {
+        //                 $match = true;
+        //                 break;
+        //             }
+        //         }
+        //         if (!$match) {
+        //             continue;
+        //         }
+        //     }
+        //     $allRows[] = $row;
+        // }
         // Read the CSV file line by line
         while (($row = fgetcsv($fileHandle)) !== false) {
             // Skip commented rows
@@ -79,14 +100,15 @@ function displayResourcesShortcode() {
             }
             // If there's a search query, filter the rows
             if ($searchQuery) {
-                $match = false;
-                foreach ($row as $column) {
-                    if (stripos($column, $searchQuery) !== false) {
-                        $match = true;
+                $rowString = implode(' ', $row);
+                $allTermsFound = true;
+                foreach ($searchTerms as $term) {
+                    if (stripos($rowString, $term) === false) {
+                        $allTermsFound = false;
                         break;
                     }
                 }
-                if (!$match) {
+                if (!$allTermsFound) {
                     continue;
                 }
             }
@@ -99,11 +121,11 @@ function displayResourcesShortcode() {
 
         foreach ($displayRows as $row) {
             echo '<tr>';
-            // Read only the first 5 columns, and hyperlink the first column with the link from the seventh column
-            for ($i = 0; $i < 5; $i++) {
-                if ($i == 0 && !empty($row[5])) {
+            // Read only the first 4 columns, and hyperlink the first column with the link from the 5th column
+            for ($i = 0; $i < 4; $i++) {
+                if ($i == 0 && !empty($row[4])) {
                     // Wrap the first column's content in an anchor tag
-                    echo '<td><a href="' . esc_url($row[5]) . '">' . htmlspecialchars($row[$i]) . '</a></td>';
+                    echo '<td><a href="' . esc_url($row[4]) . '" target="_blank">' . htmlspecialchars($row[$i]) . '</a></td>';
                 } elseif ($i == 3) {
                     // Format keywords as clickable tags
                     $keywords = explode(',', $row[$i]);
@@ -123,14 +145,59 @@ function displayResourcesShortcode() {
         echo '</div>';
 
         // Pagination controls
+        // echo '<div class="pagination">';
+        // // echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
+        // echo '<form method="get" action="' . esc_url(remove_query_arg('pg', $_SERVER['REQUEST_URI'])) . '">';
+
+        // // Preserve all other GET parameters as hidden inputs
+        // foreach ($_GET as $key => $value) {
+        //     if ($key != 'page') { // Skip 'page' parameter to avoid duplication
+        //         echo '<input type="hidden" name="'. esc_attr($key) .'" value="'. esc_attr($value) .'">';
+        //     }
+        // }
+
+        // if ($currentPage > 1) {
+        //     echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage - 1) . '">&laquo; Previous</button>';
+        // }
+
+        // // Show pagination links
+        // for ($page = max(1, $currentPage - $paginationRange); $page <= min($totalPages, $currentPage + $paginationRange); $page++) {
+        //     if ($page == $currentPage) {
+        //         echo '<span class="current-page">' . $page . '</span>';
+        //     } else {
+        //         echo '<button type="submit" name="pg" class="page-n" value="' . $page . '">' . $page . '</button>';
+        //     }
+        // }
+
+        // // Show first and last page links if necessary
+        // if ($currentPage + $paginationRange < $totalPages) {
+        //     echo '<span>...</span>';
+        //     echo '<button type="submit" name="pg" value="' . $totalPages . '">' . $totalPages . '</button>';
+        // }
+        
+        // if ($currentPage < $totalPages) {
+        //     echo '<button type="submit" name="pg" value="' . ($currentPage + 1) . '">Next &raquo;</button>';
+        // }
+
+        // echo '</form>';
+        // echo '</div>';
+
+        // Pagination controls
         echo '<div class="pagination">';
-        // echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
         echo '<form method="get" action="' . esc_url(remove_query_arg('pg', $_SERVER['REQUEST_URI'])) . '">';
 
         // Preserve all other GET parameters as hidden inputs
         foreach ($_GET as $key => $value) {
             if ($key != 'page') { // Skip 'page' parameter to avoid duplication
                 echo '<input type="hidden" name="'. esc_attr($key) .'" value="'. esc_attr($value) .'">';
+            }
+        }
+
+        // Show first page link
+        if ($currentPage > 1) {
+            echo '<button type="submit" name="pg" value="1">1</button>';
+            if ($currentPage > $paginationRange + 2) {
+                echo '<span>...</span>';
             }
         }
 
@@ -147,18 +214,21 @@ function displayResourcesShortcode() {
             }
         }
 
-        // Show first and last page links if necessary
-        if ($currentPage + $paginationRange < $totalPages) {
+        // Show last page link
+        if ($currentPage < $totalPages - $paginationRange - 1) {
             echo '<span>...</span>';
+        }
+        if ($currentPage < $totalPages) {
             echo '<button type="submit" name="pg" value="' . $totalPages . '">' . $totalPages . '</button>';
         }
-        
+
         if ($currentPage < $totalPages) {
-            echo '<button type="submit" name="pg" value="' . ($currentPage + 1) . '">Next &raquo;</button>';
+            echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage + 1) . '">Next &raquo;</button>';
         }
 
         echo '</form>';
         echo '</div>';
+
 
         // Close the file handle
         fclose($fileHandle);

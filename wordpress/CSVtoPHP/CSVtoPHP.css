@@ -133,12 +133,26 @@ button.page-np {
     /* cursor: pointer; */
     transition-duration: 0.5s;
 }
-
-.pagination .current-page, button.page-n:hover, button.page-np:hover {
+.pagination .current-page {
+    font-size: 0.9em;
     color: white;
     background-color: var(--gn2);
+    border: 1px solid var(--gn2);
+    width: auto;
+    height: 35px;
+    border-radius: 35px;
+    /* padding: 10px 20px; */
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    /* margin: 2px 1px; */
+    /* cursor: pointer; */
+    transition-duration: 0.5s;
 }
-
+button.page-n:hover, button.page-np:hover { 
+    color: white;
+    background-color: var(--gn2);
+} 
 .pagination span {
     margin: 0 5px;
 }
