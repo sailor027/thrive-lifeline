@@ -3,7 +3,7 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.7.0
+Version: 2.7.1
 Author: Ko Horiuchi
 */
 // Enable error reporting
@@ -195,7 +195,7 @@ function displayResourcesShortcode() {
 
         // Show first page link
         if ($currentPage > 1) {
-            echo '<button type="submit" name="pg" value="1">1</button>';
+            echo '<button type="submit" name="pg" class="page-n" value="1">1</button>';
             if ($currentPage > $paginationRange + 2) {
                 echo '<span>...</span>';
             }
@@ -219,7 +219,7 @@ function displayResourcesShortcode() {
             echo '<span>...</span>';
         }
         if ($currentPage < $totalPages) {
-            echo '<button type="submit" name="pg" value="' . $totalPages . '">' . $totalPages . '</button>';
+            echo '<button type="submit" name="pg" class="page-n" value="' . $totalPages . '">' . $totalPages . '</button>';
         }
 
         if ($currentPage < $totalPages) {

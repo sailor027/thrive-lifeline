@@ -122,7 +122,7 @@ button.page-np {
     color: var(--bk);
     background-color: var(--gn);
     border: 1px solid var(--gn2);
-    width: 35px;
+    width: auto;
     height: 35px;
     border-radius: 35px;
     /* padding: 10px 20px; */
@@ -138,7 +138,7 @@ button.page-np {
     color: white;
     background-color: var(--gn2);
     border: 1px solid var(--gn2);
-    width: auto;
+    width: 35px;
     height: 35px;
     border-radius: 35px;
     /* padding: 10px 20px; */
