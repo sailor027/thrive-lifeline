@@ -113,8 +113,8 @@ button.page-n {
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    /* margin: 2px 1px; */
-    /* cursor: pointer; */
+    margin: 5px 5px;
+    cursor: pointer;
     transition-duration: 0.5s;
 }
 button.page-np {
@@ -129,8 +129,9 @@ button.page-np {
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    /* margin: 2px 1px; */
-    /* cursor: pointer; */
+    padding: 0 10px;
+    margin: 5px 5px;
+    cursor: pointer;
     transition-duration: 0.5s;
 }
 .pagination .current-page {
@@ -143,9 +144,9 @@ button.page-np {
     border-radius: 35px;
     /* padding: 10px 20px; */
     text-align: center;
-    text-decoration: none;
+    /* text-decoration: none; */
     display: inline-block;
-    /* margin: 2px 1px; */
+    margin: 5px 5px;
     /* cursor: pointer; */
     transition-duration: 0.5s;
 }

@@ -36,7 +36,7 @@ function displayResourcesShortcode() {
     $currentPage = isset($_GET['pg']) ? intval($_GET['pg']) : 1;
     $rowsPerPage = 10;
     $startRow = ($currentPage - 1) * $rowsPerPage;
-    $paginationRange = 2; // Number of pagination links to show around the current page
+    $paginationRange = 1; // Number of pagination links to show around the current page
     // Buffer output to return it properly
 
     ob_start();
@@ -70,29 +70,7 @@ function displayResourcesShortcode() {
 
         // Initialize an array to store all rows
         $allRows = [];
-        
-        // // Read the CSV file line by line
-        // while (($row = fgetcsv($fileHandle)) !== false) {
-        //     // Skip commented rows
-        //     if (isset($row[0]) && strpos($row[0], '#') === 0) {
-        //         continue;
-        //     }
-        //     // If there's a search query, filter the rows
-        //     if ($searchQuery) {
-        //         $match = false;
-        //         foreach ($row as $column) {
-        //             if (stripos($column, $searchQuery) !== false) {
-        //                 $match = true;
-        //                 break;
-        //             }
-        //         }
-        //         if (!$match) {
-        //             continue;
-        //         }
-        //     }
-        //     $allRows[] = $row;
-        // }
-        // Read the CSV file line by line
+
         while (($row = fgetcsv($fileHandle)) !== false) {
             // Skip commented rows
             if (isset($row[0]) && strpos($row[0], '#') === 0) {
@@ -144,44 +122,7 @@ function displayResourcesShortcode() {
         echo '</table>';
         echo '</div>';
 
-        // Pagination controls
-        // echo '<div class="pagination">';
-        // // echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
-        // echo '<form method="get" action="' . esc_url(remove_query_arg('pg', $_SERVER['REQUEST_URI'])) . '">';
-
-        // // Preserve all other GET parameters as hidden inputs
-        // foreach ($_GET as $key => $value) {
-        //     if ($key != 'page') { // Skip 'page' parameter to avoid duplication
-        //         echo '<input type="hidden" name="'. esc_attr($key) .'" value="'. esc_attr($value) .'">';
-        //     }
-        // }
-
-        // if ($currentPage > 1) {
-        //     echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage - 1) . '">&laquo; Previous</button>';
-        // }
-
-        // // Show pagination links
-        // for ($page = max(1, $currentPage - $paginationRange); $page <= min($totalPages, $currentPage + $paginationRange); $page++) {
-        //     if ($page == $currentPage) {
-        //         echo '<span class="current-page">' . $page . '</span>';
-        //     } else {
-        //         echo '<button type="submit" name="pg" class="page-n" value="' . $page . '">' . $page . '</button>';
-        //     }
-        // }
-
-        // // Show first and last page links if necessary
-        // if ($currentPage + $paginationRange < $totalPages) {
-        //     echo '<span>...</span>';
-        //     echo '<button type="submit" name="pg" value="' . $totalPages . '">' . $totalPages . '</button>';
-        // }
-        
-        // if ($currentPage < $totalPages) {
-        //     echo '<button type="submit" name="pg" value="' . ($currentPage + 1) . '">Next &raquo;</button>';
-        // }
-
-        // echo '</form>';
-        // echo '</div>';
-
+    
         // Pagination controls
         echo '<div class="pagination">';
         echo '<form method="get" action="' . esc_url(remove_query_arg('pg', $_SERVER['REQUEST_URI'])) . '">';
@@ -193,16 +134,16 @@ function displayResourcesShortcode() {
             }
         }
 
+        if ($currentPage > 1) {
+            echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage - 1) . '">&laquo; Previous</button>';
+        }
+
         // Show first page link
         if ($currentPage > 1) {
             echo '<button type="submit" name="pg" class="page-n" value="1">1</button>';
             if ($currentPage > $paginationRange + 2) {
                 echo '<span>...</span>';
             }
-        }
-
-        if ($currentPage > 1) {
-            echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage - 1) . '">&laquo; Previous</button>';
         }
 
         // Show pagination links
