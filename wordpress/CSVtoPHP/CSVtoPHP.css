@@ -51,14 +51,23 @@ a.tag:hover {
 
 /* forms */
 .resources-search-container {
-    text-align: right;
-    margin: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
 }
-
+.resources-search select {
+    width: 200px;
+    padding: 5px;
+    font-size: 12pt;
+    border: 1px solid var(--gn2);
+    border-radius: 4px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
 .resources-search {
     display: inline-block;
 }
-
 form.resources-search input[type="text"] {
     font-size: 12pt;
     height: 40px;
@@ -67,10 +76,14 @@ form.resources-search input[type="text"] {
     padding: 0 20px;
     vertical-align: middle;
 }
-
 .resources-search input[type="image"] {
     color: var(--gn2);
     vertical-align: middle;
+}
+.resources-search select,
+.resources-search input[type="text"],
+.resources-search input[type="image"] {
+    margin: 0;
 }
 
 /* table */
