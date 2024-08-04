@@ -3,7 +3,7 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.7.1
+Version: 2.7.2
 Author: Ko Horiuchi
 */
 // Enable error reporting
