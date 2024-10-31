@@ -16,7 +16,6 @@ body {
     color: var(--bk);
     line-height: 1.2;
 }
-
 code {
     font-family: var(--mono);
     font-size: 10pt;
@@ -26,7 +25,6 @@ code {
     border-radius: 5px;
     font-size: 90%;
 }
-
 a.tag {
     font-family: var(--mono) !important;
     color: var(--bk);
@@ -40,7 +38,6 @@ a.tag {
     text-decoration: none;
     transition-duration: 0.5s;
 }
-
 a.tag:hover {
     color: white !important;
     background-color: var(--gn2);
@@ -111,10 +108,15 @@ table.csv-table td {
 }
 
 /* pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 .pagination form {
     display: inline-block;
 }
-button.page-n {
+button.page-n, button.page-np, .current-page {
     font-size: 0.9em;
     color: var(--bk);
     background-color: var(--gn);
@@ -122,45 +124,12 @@ button.page-n {
     width: 35px;
     height: 35px;
     border-radius: 35px;
-    /* padding: 10px 20px; */
     text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    margin: 5px 5px;
+    display: flex; /* Change to flex for easier alignment */
+    justify-content: center; /* Center the content inside the button */
+    align-items: center; /* Center vertically */
+    margin: 5px;
     cursor: pointer;
-    transition-duration: 0.5s;
-}
-button.page-np {
-    font-size: 0.9em;
-    color: var(--bk);
-    background-color: var(--gn);
-    border: 1px solid var(--gn2);
-    width: auto;
-    height: 35px;
-    border-radius: 35px;
-    /* padding: 10px 20px; */
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    padding: 0 10px;
-    margin: 5px 5px;
-    cursor: pointer;
-    transition-duration: 0.5s;
-}
-.pagination .current-page {
-    font-size: 0.9em;
-    color: white;
-    background-color: var(--gn2);
-    border: 1px solid var(--gn2);
-    width: 35px;
-    height: 35px;
-    border-radius: 35px;
-    /* padding: 10px 20px; */
-    text-align: center;
-    /* text-decoration: none; */
-    display: inline-block;
-    margin: 5px 5px;
-    /* cursor: pointer; */
     transition-duration: 0.5s;
 }
 button.page-n:hover, button.page-np:hover { 

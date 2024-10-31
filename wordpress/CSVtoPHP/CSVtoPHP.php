@@ -3,9 +3,10 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.8.0
+Version: 2.7.3
 Author: Ko Horiuchi
 */
+
 // Enable error reporting
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -18,7 +19,7 @@ $searchImg = plugin_dir_path(__FILE__) . '/media/search.svg'; //do not change th
 
 // Enqueue custom styles
 function CSVtoPHP_enqueueStyles() {
-    wp_enqueue_style('csv-to-php-styles', plugin_dir_url(__FILE__) . 'CSVtoPHP.css');
+    wp_enqueue_style('csv-to-php-styles', plugin_dir_url(__FILE__) . 'style.css');
 }
 add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
 
@@ -31,9 +32,6 @@ function displayResourcesShortcode() {
     // Handle the search query
     $searchQuery = isset($_GET['kw']) ? sanitize_text_field($_GET['kw']) : '';
     $searchTerms = array_filter(explode(' ', $searchQuery)); // Split search query into individual terms
-
-    // Handle selected keywords from the dropdown
-    $selectedKeywords = isset($_GET['keywords']) ? (array)$_GET['keywords'] : [];
 
     // Handle pagination
     $currentPage = isset($_GET['pg']) ? intval($_GET['pg']) : 1;
@@ -70,14 +68,6 @@ function displayResourcesShortcode() {
         // Display search form and keywords dropdown in a container
         echo '<div class="resources-search-container">';
         echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '" class="resources-search">';
-
-        // Keywords dropdown
-        echo '<select name="keywords[]" multiple>';
-        foreach ($allKeywords as $keyword) {
-            $selected = in_array($keyword, $selectedKeywords) ? 'selected' : '';
-            echo '<option value="' . esc_attr($keyword) . '" ' . $selected . '>' . esc_html($keyword) . '</option>';
-        }
-        echo '</select>';
 
         // Search box
         echo '<input type="text" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
@@ -124,16 +114,6 @@ function displayResourcesShortcode() {
                         }
                     }
                     if (!$allTermsFound) {
-                        continue;
-                    }
-                }
-
-                // If there are selected keywords, filter the rows
-                if (!empty($selectedKeywords)) {
-                    $rowKeywords = explode(',', $row[3]);
-                    $rowKeywords = array_map('trim', $rowKeywords);
-                    $keywordsMatched = array_intersect($selectedKeywords, $rowKeywords);
-                    if (empty($keywordsMatched)) {
                         continue;
                     }
                 }
@@ -186,7 +166,7 @@ function displayResourcesShortcode() {
             }
 
             // Show first page link
-            if ($currentPage > 1) {
+            if ($currentPage > 2) {
                 echo '<button type="submit" name="pg" class="page-n" value="1">1</button>';
                 if ($currentPage > $paginationRange + 2) {
                     echo '<span>...</span>';
@@ -201,7 +181,6 @@ function displayResourcesShortcode() {
                     echo '<button type="submit" name="pg" class="page-n" value="' . $page . '">' . $page . '</button>';
                 }
             }
-
             // Show last page link
             if ($currentPage < $totalPages - $paginationRange - 1) {
                 echo '<span>...</span>';
@@ -209,7 +188,6 @@ function displayResourcesShortcode() {
             if ($currentPage < $totalPages) {
                 echo '<button type="submit" name="pg" class="page-n" value="' . $totalPages . '">' . $totalPages . '</button>';
             }
-
             if ($currentPage < $totalPages) {
                 echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage + 1) . '">Next &raquo;</button>';
             }
