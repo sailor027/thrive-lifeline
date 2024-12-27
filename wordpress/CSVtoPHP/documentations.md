@@ -22,10 +22,13 @@
 - URLs must include http:// or https://
 
 ## Version History
-`2.8.1` *2024.12.26*
+`2.8.1` *2024.12.27*
 - Update search function:
   - Add javascript file
-  - Enable multi-select and display selected tags
+  - Display tags as clickable elements in a flex container
+  - Allow users to click tags to toggle selection
+  - Filter the resource table based on selected tags
+  - Maintain the same styling as existing tags
 ***
 `2.8.0` *2024.08.03*
 - Enable filtering through "Keywords" dropdown
