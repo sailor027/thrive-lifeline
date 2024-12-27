@@ -45,6 +45,10 @@ a.tag:hover {
     margin: 3px;
     text-decoration: none;
 }
+a.tag.selected {
+    background-color: var(--gn2);
+    color: white;
+}
 
 /* forms */
 .resources-search-container {
@@ -110,8 +114,9 @@ table.csv-table td {
 /* pagination */
 .pagination {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
+    margin-right: 10px;
 }
 .pagination form {
     display: inline-block;
@@ -125,9 +130,9 @@ button.page-n, button.page-np, .current-page {
     height: 35px;
     border-radius: 35px;
     text-align: center;
-    display: flex; /* Change to flex for easier alignment */
+    display: flex;
     justify-content: center; /* Center the content inside the button */
-    align-items: center; /* Center vertically */
+    /* align-items: center; Center vertically */
     margin: 5px;
     cursor: pointer;
     transition-duration: 0.5s;

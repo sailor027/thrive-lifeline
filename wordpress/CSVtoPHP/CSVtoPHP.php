@@ -3,7 +3,8 @@
 Plugin Name: CSV to PHP
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.7.3
+Version: 2.8.1
+Date: 2024.12.25
 Author: Ko Horiuchi
 */
 
@@ -12,10 +13,15 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+//---------------------------------------------
+
 // Path to the CSV file relative to this plugin directory
-$resourcesFile = plugin_dir_path(__FILE__) . 'crisisResources.csv';
-$docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
+$resourcesFile = plugin_dir_path(__FILE__) . 'crisisResources.csv'; 
+// $docsFile = plugin_dir_path(__FILE__) . 'documentations.html';
+$docsFile = plugin_dir_path(__FILE__) . 'documentations.md'; //TODO change back to HTML if needed
 $searchImg = plugin_dir_path(__FILE__) . '/media/search.svg'; //do not change this
+
+//---------------------------------------------
 
 // Enqueue custom styles
 function CSVtoPHP_enqueueStyles() {
@@ -23,8 +29,17 @@ function CSVtoPHP_enqueueStyles() {
 }
 add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
 
+function CSVtoPHP_enqueueScript() {
+    wp_enqueue_script('csv-to-php-script', plugin_dir_url(__FILE__) . 'script.js', array('jquery'), '1.0', true);
+}
+add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueScripts');
+
+//---------------------------------------------
+
 // Register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
+
+//================================================
 
 function displayResourcesShortcode() {
     global $resourcesFile, $searchImg;
@@ -32,6 +47,9 @@ function displayResourcesShortcode() {
     // Handle the search query
     $searchQuery = isset($_GET['kw']) ? sanitize_text_field($_GET['kw']) : '';
     $searchTerms = array_filter(explode(' ', $searchQuery)); // Split search query into individual terms
+
+    // Capture the selected tags
+    $selectedTags = isset( $_GET['tags'] ) ? $_GET['tags'] :'';
 
     // Handle pagination
     $currentPage = isset($_GET['pg']) ? intval($_GET['pg']) : 1;
@@ -138,7 +156,8 @@ function displayResourcesShortcode() {
                         echo '<td>';
                         foreach ($keywords as $keyword) {
                             $keyword = trim($keyword);
-                            echo '<a href="?kw=' . urlencode($keyword) . '" class="tag">' . htmlspecialchars($keyword) . '</a> ';
+                            $isSelected = in_array($keyword, $selectedTags) ? 'selected' : '';
+                            echo '<a href="#" class="tag ' . $isSelected . '">' . htmlspecialchars($keyword) . '</a> ';
                         }
                         echo '</td>';
                     } else {
