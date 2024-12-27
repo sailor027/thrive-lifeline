@@ -13,7 +13,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-//---------------------------------------------
+//-----------------------------------------------------------------------------------------------
 
 // Path to the CSV file relative to this plugin directory
 $resourcesFile = plugin_dir_path(__FILE__) . 'crisisResources.csv'; 
@@ -21,7 +21,7 @@ $resourcesFile = plugin_dir_path(__FILE__) . 'crisisResources.csv';
 $docsFile = plugin_dir_path(__FILE__) . 'documentations.md'; //TODO change back to HTML if needed
 $searchImg = plugin_dir_path(__FILE__) . '/media/search.svg'; //do not change this
 
-//---------------------------------------------
+//-----------------------------------------------------------------------------------------------
 
 // Enqueue custom styles
 function CSVtoPHP_enqueueStyles() {
@@ -32,17 +32,24 @@ add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
 function CSVtoPHP_enqueueScript() {
     wp_enqueue_script('csv-to-php-script', plugin_dir_url(__FILE__) . 'script.js', array('jquery'), '1.0', true);
 }
-add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueScripts');
+add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueScript');
 
 //---------------------------------------------
 
 // Register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
 
-//================================================
+//================================================================================================
 
 function displayResourcesShortcode() {
     global $resourcesFile, $searchImg;
+
+    if (!file_exists($resourcesFile)) {
+        return '<div class="notice notice-error">Resource file not found: ' . esc_html($resourcesFile) . '</div>';
+    }
+    if (!file_exists($searchImg)) {
+        return '<div class="notice notice-error">Search image not found: ' . esc_html($searchImg) . '</div>';
+    }
 
     // Handle the search query
     $searchQuery = isset($_GET['kw']) ? sanitize_text_field($_GET['kw']) : '';
@@ -56,12 +63,14 @@ function displayResourcesShortcode() {
     $rowsPerPage = 10;
     $startRow = ($currentPage - 1) * $rowsPerPage;
     $paginationRange = 1; // Number of pagination links to show around the current page
-    // Buffer output to return it properly
-
-    ob_start();
+    
+    ob_start(); // Buffer output to return it properly
 
     // Open the CSV file for reading
-    if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
+    if (($fileHandle = @fopen($resourcesFile, 'r')) !== false) {
+        if (!is_readable($resourcesFile)) {
+            return '<div class="notice notice-error">File is not readable: ' . esc_html($resourcesFile) . '</div>';
+        }
         // Read all keywords/tags from the CSV file
         $allKeywords = [];
         while (($row = fgetcsv($fileHandle)) !== false) {
@@ -83,139 +92,105 @@ function displayResourcesShortcode() {
         // Sort keywords alphabetically
         sort($allKeywords);
 
-        // Display search form and keywords dropdown in a container
-        echo '<div class="resources-search-container">';
-        echo '<form method="get" action="' . esc_url($_SERVER['REQUEST_URI']) . '" class="resources-search">';
+        //----------------------------------------------------------------------------------------
 
-        // Search box
-        echo '<input type="text" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
-        echo '<input type="image" src="' . esc_url($searchImg) . '" alt="Search" class="img">'; // Use $searchImg for image source
-        echo '</form>';
+        // Display search form and keywords dropdown in a container
+
+        echo '<div class="resources-search-container">';
+        echo '<div class="search-controls">';
+        echo '<div class="search-wrapper">';
+        echo '<input type="text" id="resourceSearch" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
+        echo '<button type="button" class="search-button" aria-label="Search">';
+        echo '<img src="' . esc_url($searchImg) . '" alt="Search">'; // Use $searchImg for image source
+        echo '</button>';
+        echo '</div>';
+        echo '<button type="button" class="reset-button" onclick="resetFilters()">';
+        echo '<span>×</span> Reset Filters';
+        echo '</button>';
         echo '</div>';
 
-        // Reopen the CSV file for reading
+        // Tags section
+        echo '<div class="tags-container" id="filterTags">';
+        $allTags = [];
+        if (($handle = fopen($resourcesFile, 'r')) !== false) {
+            while (($row = fgetcsv($handle)) !== false) {
+                if (isset($row[3])) {  // Check if Keywords column exists
+                    $tags = array_map('trim', explode(',', $row[3]));
+                    foreach ($tags as $tag) {
+                        if (!empty($tag) && !in_array($tag, $allTags)) {
+                            $allTags[] = $tag;
+                        }
+                    }
+                }
+            }
+            fclose($handle);
+            sort($allTags);  
+
+            // Display tags as interactive buttons
+            foreach ($allTags as $tag) {
+                if (!empty($tag)) {
+                    $isSelected = in_array($tag, $_GET['tags'] ?? []) ? 'selected' : '';
+                    echo sprintf(
+                        '<button type="button" class="tag %s" data-tag="%s">%s</button>',
+                        $isSelected,
+                        htmlspecialchars($tag),
+                        htmlspecialchars($tag)
+                    );
+                }
+            }
+        } else {
+            echo '<div class="notice notice-error">Unable to read tags from file</div>';
+        }
+        echo '</div>'; // Close tags-container
+
+        echo '</div>'; // Close resources-search-container
+
+        //javascript for clearing filters
+        echo "<script>
+        function clearFilters() {
+            var select = document.querySelector('select[name=\"tags[]\"]');
+            for (var i = 0; i < select.options.length; i++) {
+                select.options[i].selected = false;
+            }
+            document.querySelector('.resources-search').submit();
+        }
+        </script>";
+
+        //----------------------------------------------------------------------------------------
+
+        // Display the table of resources
+
+        $selectedTags = $_GET['tags'] ?? [];
+
         if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
-            echo '<div style="overflow-x:auto;">';
             echo '<table class="csv-table">';
-            echo '
-            <tr>
-                <th width="20%">Resource</th>
-                <th width="15%">Hotline Phone/Text</th>
-                <th width="50%">Resource Description</th>
-                <th width="15%">Keywords</th>
-            </tr>
-            ';
-
-            // Skip first row
-            $rowCount = 0;
-            while ($rowCount < 1 && fgetcsv($fileHandle) !== false) {
-                $rowCount++;
-            }
-
-            // Initialize an array to store all rows
-            $allRows = [];
-
+            echo '<tr><th>Resource</th><th>Hotline Phone/Text</th><th>Resource Description</th><th>Keywords</th></tr>';
+            
             while (($row = fgetcsv($fileHandle)) !== false) {
-                // Skip commented rows
-                if (isset($row[0]) && strpos($row[0], '#') === 0) {
-                    continue;
-                }
-
-                // If there's a search query, filter the rows
-                if ($searchQuery) {
-                    $rowString = implode(' ', $row);
-                    $allTermsFound = true;
-                    foreach ($searchTerms as $term) {
-                        if (stripos($rowString, $term) === false) {
-                            $allTermsFound = false;
-                            break;
+                $rowKeywords = array_map('trim', explode(',', $row[3]));
+                $showRow = empty($selectedTags) || count(array_intersect($selectedTags, $rowKeywords)) > 0;
+                
+                if ($showRow) {
+                    echo '<tr>';
+                    foreach ($row as $i => $cell) {
+                        if ($i == 3) {
+                            // Format keywords as clickable tags
+                            $keywords = explode(',', $cell);
+                            echo '<td>';
+                            foreach ($keywords as $keyword) {
+                                $keyword = trim($keyword);
+                                $isSelected = in_array($keyword, $selectedTags) ? 'selected' : '';
+                                echo "<a href='#' class='tag $isSelected'>" . htmlspecialchars($keyword) . "</a> ";
+                            }
+                            echo '</td>';
+                        } else {
+                            echo '<td>' . htmlspecialchars($cell) . '</td>';
                         }
                     }
-                    if (!$allTermsFound) {
-                        continue;
-                    }
+                    echo '</tr>';
                 }
-
-                $allRows[] = $row;
-            }
-
-            $totalRows = count($allRows);
-            $totalPages = ceil($totalRows / $rowsPerPage);
-            $displayRows = array_slice($allRows, $startRow, $rowsPerPage);
-
-            foreach ($displayRows as $row) {
-                echo '<tr>';
-                // Read only the first 4 columns, and hyperlink the first column with the link from the 5th column
-                for ($i = 0; $i < 4; $i++) {
-                    if ($i == 0 && !empty($row[4])) {
-                        // Wrap the first column's content in an anchor tag
-                        echo '<td><a href="' . esc_url($row[4]) . '" target="_blank">' . htmlspecialchars($row[$i]) . '</a></td>';
-                    } elseif ($i == 3) {
-                        // Format keywords as clickable tags
-                        $keywords = explode(',', $row[$i]);
-                        echo '<td>';
-                        foreach ($keywords as $keyword) {
-                            $keyword = trim($keyword);
-                            $isSelected = in_array($keyword, $selectedTags) ? 'selected' : '';
-                            echo '<a href="#" class="tag ' . $isSelected . '">' . htmlspecialchars($keyword) . '</a> ';
-                        }
-                        echo '</td>';
-                    } else {
-                        echo '<td>' . htmlspecialchars(isset($row[$i]) ? $row[$i] : '') . '</td>';
-                    }
-                }
-                echo '</tr>';
             }
             echo '</table>';
-            echo '</div>';
-
-            // Pagination controls
-            echo '<div class="pagination">';
-            echo '<form method="get" action="' . esc_url(remove_query_arg('pg', $_SERVER['REQUEST_URI'])) . '">';
-
-            // Preserve all other GET parameters as hidden inputs
-            foreach ($_GET as $key => $value) {
-                if ($key != 'page') { // Skip 'page' parameter to avoid duplication
-                    echo '<input type="hidden" name="'. esc_attr($key) .'" value="'. esc_attr($value) .'">';
-                }
-            }
-
-            if ($currentPage > 1) {
-                echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage - 1) . '">&laquo; Previous</button>';
-            }
-
-            // Show first page link
-            if ($currentPage > 2) {
-                echo '<button type="submit" name="pg" class="page-n" value="1">1</button>';
-                if ($currentPage > $paginationRange + 2) {
-                    echo '<span>...</span>';
-                }
-            }
-
-            // Show pagination links
-            for ($page = max(1, $currentPage - $paginationRange); $page <= min($totalPages, $currentPage + $paginationRange); $page++) {
-                if ($page == $currentPage) {
-                    echo '<span class="current-page">' . $page . '</span>';
-                } else {
-                    echo '<button type="submit" name="pg" class="page-n" value="' . $page . '">' . $page . '</button>';
-                }
-            }
-            // Show last page link
-            if ($currentPage < $totalPages - $paginationRange - 1) {
-                echo '<span>...</span>';
-            }
-            if ($currentPage < $totalPages) {
-                echo '<button type="submit" name="pg" class="page-n" value="' . $totalPages . '">' . $totalPages . '</button>';
-            }
-            if ($currentPage < $totalPages) {
-                echo '<button type="submit" name="pg" class="page-np" value="' . ($currentPage + 1) . '">Next &raquo;</button>';
-            }
-
-            echo '</form>';
-            echo '</div>';
-
-
-            // Close the file handle
             fclose($fileHandle);
         } else {
             // Error opening the file
@@ -229,6 +204,8 @@ function displayResourcesShortcode() {
     // Return the buffered content as a string
     return ob_get_clean();
 }
+
+//================================================================================================
 
 // Add a menu item to the plugin settings page
 add_action('admin_menu', 'CSVtoPHP_pluginMenu');
