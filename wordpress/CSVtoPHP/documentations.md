@@ -13,6 +13,7 @@
 ## Version History
 `2.8.1` *2024.12.26*
 - Added javascript file.
+- 
 ***
 `2.8.0` *2024.08.03*
 - Enabled filtering through "Keywords" dropdown.
