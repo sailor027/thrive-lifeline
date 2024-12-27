@@ -1,8 +1,8 @@
 # CSV to PHP
 ## Plugin Information
 
-- Version: `2.7.5`
-- Last updated: `2024.12.26` ([version history](#version-history))
+- Version: `2.8.1`
+- Last updated: `2024.12.27` ([version history](#version-history))
 
 ## How to use the plugin
 1. Ensure the CSV file TESTthrive_resources.csv is placed in the plugin directory: `plugin_dir_path(__FILE__);`
