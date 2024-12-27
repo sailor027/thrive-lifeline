@@ -4,7 +4,7 @@
 Plugin Name: Database Plugin
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/CSVtoPHP
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.8.1
+Version: 2.8.2
 Date: 2024.12.27
 Author: Ko Horiuchi
 License: MIT
@@ -34,6 +34,10 @@ add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueStyles');
 
 function CSVtoPHP_enqueueScript() {
     wp_enqueue_script('csv-to-php-script', plugin_dir_url(__FILE__) . 'script.js', array('jquery'), '1.0', true);
+    wp_localize_script('csv-to-php-script', 'csvToPhpData', array(
+        'csvUrl' => plugin_dir_url(__FILE__) . 'crisisResources.csv',
+        'ajaxUrl' => admin_url('admin-ajax.php')
+    ));
 }
 add_action('wp_enqueue_scripts', 'CSVtoPHP_enqueueScript');
 
@@ -97,8 +101,7 @@ function displayResourcesShortcode() {
 
         //----------------------------------------------------------------------------------------
 
-        // Display search form and keywords dropdown in a container
-
+        // Display the search form
         echo '<div class="resources-search-container">';
         echo '<div class="search-controls">';
         echo '<div class="search-wrapper">';
@@ -148,65 +151,23 @@ function displayResourcesShortcode() {
 
         echo '</div>'; // Close resources-search-container
 
-        //javascript for clearing filters
-        echo "<script>
-        function clearFilters() {
-            var select = document.querySelector('select[name=\"tags[]\"]');
-            for (var i = 0; i < select.options.length; i++) {
-                select.options[i].selected = false;
-            }
-            document.querySelector('.resources-search').submit();
-        }
-        </script>";
-
         //----------------------------------------------------------------------------------------
 
-        // Display the table of resources
+        // Add the table structure for JavaScript to populate
+        echo '<div id="resourceTableContainer">';
+        echo '<table class="csv-table">';
+        echo '<thead>';
+        echo '<tr><th>Resource</th><th>Hotline Phone/Text</th><th>Resource Description</th><th>Keywords</th></tr>';
+        echo '</thead>';
+        echo '<tbody id="resourceTableBody">';
+        echo '<tr><td colspan="4" class="text-center">Loading resources...</td></tr>';  // Add this line
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
 
-        $selectedTags = $_GET['tags'] ?? [];
-
-        if (($fileHandle = fopen($resourcesFile, 'r')) !== false) {
-            echo '<table class="csv-table">';
-            echo '<tr><th>Resource</th><th>Hotline Phone/Text</th><th>Resource Description</th><th>Keywords</th></tr>';
-            
-            while (($row = fgetcsv($fileHandle)) !== false) {
-                $rowKeywords = array_map('trim', explode(',', $row[3]));
-                $showRow = empty($selectedTags) || count(array_intersect($selectedTags, $rowKeywords)) > 0;
-                
-                if ($showRow) {
-                    echo '<tr>';
-                    foreach ($row as $i => $cell) {
-                        if ($i == 3) {
-                            // Format keywords as clickable tags
-                            $keywords = explode(',', $cell);
-                            echo '<td>';
-                            foreach ($keywords as $keyword) {
-                                $keyword = trim($keyword);
-                                $isSelected = in_array($keyword, $selectedTags) ? 'selected' : '';
-                                echo "<a href='#' class='tag $isSelected'>" . htmlspecialchars($keyword) . "</a> ";
-                            }
-                            echo '</td>';
-                        } else {
-                            echo '<td>' . htmlspecialchars($cell) . '</td>';
-                        }
-                    }
-                    echo '</tr>';
-                }
-            }
-            echo '</table>';
-            fclose($fileHandle);
-        } else {
-            // Error opening the file
-            return '<div class="notice notice-error is-dismissible">Error opening ' . esc_html($resourcesFile) . '</div>';
-        }
-    } else {
-        // Error opening the file
-        return '<div class="notice notice-error is-dismissible">Error opening ' . esc_html($resourcesFile) . '</div>';
-    }
-
-    // Return the buffered content as a string
-    return ob_get_clean();
-}
+        return ob_get_clean();
+    }   // Close the function
+}       // Close the file
 
 //================================================================================================
 

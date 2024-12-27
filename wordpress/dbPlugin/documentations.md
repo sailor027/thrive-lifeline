@@ -1,7 +1,7 @@
 # Database Plugin
 ## Plugin Information
 
-- Version: `2.8.1`
+- Version: `2.8.2`
 - Last updated: `2024.12.27` ([version history](#version-history))
 
 ## How to use the plugin
@@ -22,6 +22,8 @@
 - URLs must include http:// or https://
 
 ## Version History
+`2.8.2` *2024.12.27*
+- Fix resource table display issue
 `2.8.1` *2024.12.27*
 - Update search function:
   - Add javascript file
@@ -34,7 +36,7 @@
 - Enable filtering through "Keywords" dropdown
 ***
 `2.7.0`	*2024.08.02*
-- Fix pagination buttons.
+- Fix pagination buttons
 - Combine Keywords and Language/Region
 - Adde "Resource" column to the search
 - Edit search function
