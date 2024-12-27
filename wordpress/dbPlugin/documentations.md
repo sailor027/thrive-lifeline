@@ -1,4 +1,4 @@
-# CSV to PHP
+# Database Plugin
 ## Plugin Information
 
 - Version: `2.8.1`
