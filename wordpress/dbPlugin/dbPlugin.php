@@ -1,5 +1,5 @@
 <?php
-//================================================================================================
+//========================================================================================================
 /*
 Plugin Name: Database Plugin
 Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/dbPlugin
@@ -9,15 +9,15 @@ Date: 2024.12.27
 Author: Ko Horiuchi
 License: MIT
 */
-//================================================================================================
+//========================================================================================================
 
 // Prevent direct file access
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// Define plugin version - update this single constant to change all version references
-define('DBPLUGIN_VERSION', '2.8.3'); //TODO Update version number
+// Define plugin version and constants
+define('DBPLUGIN_VERSION', '2.8.3');
 define('DBPLUGIN_FILE', __FILE__);
 
 // Enable error reporting
@@ -25,16 +25,13 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-//-----------------------------------------------------------------------------------------------
-
 // Define plugin paths securely
 $plugin_dir = wp_normalize_path(plugin_dir_path(DBPLUGIN_FILE));
 $resourcesFile = $plugin_dir . 'crisisResources.csv';
 $docsFile = $plugin_dir . 'documentations.md';
 $searchImg = $plugin_dir . 'media/search.svg';
 
-//-----------------------------------------------------------------------------------------------
-
+//--------------------------------------------------------------------------------------------
 // Enqueue custom styles
 function dbPlugin_enqueueStyles() {
     wp_enqueue_style(
@@ -46,6 +43,7 @@ function dbPlugin_enqueueStyles() {
 }
 add_action('wp_enqueue_scripts', 'dbPlugin_enqueueStyles');
 
+// Enqueue JavaScript
 function dbPlugin_enqueueScript() {
     wp_enqueue_script(
         'dbPlugin-script', 
@@ -58,7 +56,6 @@ function dbPlugin_enqueueScript() {
         'dbPlugin-script', 
         'dbPluginData', 
         array(
-            'csvPath' => wp_normalize_path(plugin_dir_path(DBPLUGIN_FILE) . 'crisisResources.csv'),
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('dbPlugin_nonce'),
             'version' => DBPLUGIN_VERSION
@@ -67,13 +64,59 @@ function dbPlugin_enqueueScript() {
 }
 add_action('wp_enqueue_scripts', 'dbPlugin_enqueueScript');
 
-//-----------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------
+// Add AJAX handlers for both logged-in and non-logged-in users
+add_action('wp_ajax_get_resources', 'handle_get_resources');
+add_action('wp_ajax_nopriv_get_resources', 'handle_get_resources');
 
+function handle_get_resources() {
+    check_ajax_referer('dbPlugin_nonce', 'nonce');
+    
+    global $resourcesFile;
+    
+    if (!file_exists($resourcesFile)) {
+        wp_send_json_error('Resource file not found');
+        return;
+    }
+    
+    if (!is_readable($resourcesFile)) {
+        wp_send_json_error('Resource file is not readable');
+        return;
+    }
+    
+    $resources = array();
+    $handle = fopen($resourcesFile, 'r');
+    
+    if ($handle !== false) {
+        // Skip header row
+        $headers = fgetcsv($handle);
+        
+        // Read data rows
+        while (($row = fgetcsv($handle)) !== false) {
+            // Skip commented rows
+            if (isset($row[0]) && strpos($row[0], '#') === 0) {
+                continue;
+            }
+            
+            // Create associative array using headers
+            if (count($row) === count($headers)) {
+                $resource = array_combine($headers, $row);
+                $resources[] = $resource;
+            }
+        }
+        fclose($handle);
+        
+        wp_send_json_success($resources);
+    } else {
+        wp_send_json_error('Failed to open resource file');
+    }
+}
+
+//--------------------------------------------------------------------------------------------
 // Register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
 
-//================================================================================================
-
+//========================================================================================================
 /**
  * Sanitize an array of tags
  *
@@ -87,6 +130,7 @@ function sanitize_tag_array($tags) {
     return array_map('sanitize_text_field', $tags);
 }
 
+//========================================================================================================
 /**
  * Display resources table with search and filtering capabilities
  *
@@ -109,43 +153,7 @@ function displayResourcesShortcode($atts = array()) {
     $searchTerms = array_filter(explode(' ', $searchQuery));
     $selectedTags = isset($_GET['tags']) ? sanitize_tag_array($_GET['tags']) : array();
 
-    // Handle pagination
-    $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
-    $rowsPerPage = 10;
-    $startRow = ($currentPage - 1) * $rowsPerPage;
-    $paginationRange = 1;
-    
     ob_start();
-
-    // Process the CSV file
-    $fileHandle = @fopen($resourcesFile, 'r');
-    if ($fileHandle === false) {
-        return '<div class="notice notice-error">Unable to open resource file</div>';
-    }
-
-    if (!is_readable($resourcesFile)) {
-        fclose($fileHandle);
-        return '<div class="notice notice-error">File is not readable: ' . esc_html($resourcesFile) . '</div>';
-    }
-
-    // Read all keywords/tags
-    $allKeywords = array();
-    while (($row = fgetcsv($fileHandle)) !== false) {
-        if (isset($row[0]) && strpos($row[0], '#') === 0) {
-            continue;
-        }
-        if (isset($row[3])) {
-            $keywords = explode(',', $row[3]);
-            foreach ($keywords as $keyword) {
-                $keyword = trim($keyword);
-                if ($keyword !== '' && !in_array($keyword, $allKeywords)) {
-                    $allKeywords[] = $keyword;
-                }
-            }
-        }
-    }
-    fclose($fileHandle);
-    sort($allKeywords);
 
     // Display search form
     echo '<div class="resources-search-container">';
@@ -211,8 +219,7 @@ function displayResourcesShortcode($atts = array()) {
     return ob_get_clean();
 }
 
-//================================================================================================
-
+//--------------------------------------------------------------------------------------------
 // Add admin menu
 add_action('admin_menu', 'dbPlugin_pluginMenu');
 
