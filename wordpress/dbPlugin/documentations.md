@@ -22,6 +22,9 @@
 - URLs must include http:// or https://
 
 ## Version History
+`2.8.4`
+- [ ] Add page controls
+***
 `2.8.3` `2.8.2` *2024.12.27*
 - Fix resource table display issue
 ***
