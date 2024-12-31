@@ -156,3 +156,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize on page load
     loadResources();
 });
+
+//==================================================================================================
+function toggleTagFilter(tag) {
+    // Find the corresponding filter tag button
+    const filterTag = document.querySelector(`.tag[data-tag="${tag}"]`);
+    if (filterTag) {
+        // Simulate a click on the filter tag
+        filterTag.click();
+        
+        // Update table tags to match the filter tag state
+        const tableTagButtons = document.querySelectorAll(`.table-tag[data-tag="${tag}"]`);
+        tableTagButtons.forEach(button => {
+            button.classList.toggle('selected', filterTag.classList.contains('selected'));
+        });
+    }
+}

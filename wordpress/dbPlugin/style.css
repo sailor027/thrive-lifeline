@@ -11,13 +11,15 @@
 /* -------------------------------------------------------------- */
 /* default values */
 :root {
-    --font: 'Noto Sans', sans-serif;
+    --font: sans-serif;
     --mono: 'Fira Code', monospace;
-    --bk: #000000;
-    --gn: #BFCAC6;
-    --gn2: #68765F;
-    --or: #EDB16B;
-    --gy: #BFCAC6;
+    --blk: #000000;
+    --grn: #BFCAC6;
+    --grn2: #68765F;
+    --org: #EDB16B;
+    --gry: #E7E4E2;
+    --brn: #784D36;
+    font-size: clamp(12px, 0.75rem + ((1vw - 3.2px) * 0.543), 17px);
 }
 
 /* ============================================================= */
@@ -26,7 +28,7 @@
 body {
     font-family: var(--font);
     font-size: 12pt;
-    color: var(--bk);
+    color: var(--blk);
     line-height: 1.2;
 }
 code {
@@ -51,19 +53,20 @@ code {
     font-family: var(--mono);
     font-size: 0.875rem;
     padding: 0.25rem 0.75rem;
-    background-color: var(--gy);
-    color: var(--bk);
+    margin: 20px, 10px !important;
+    background-color: var(--grn);
+    color: var(--blk);
     border: none;
     border-radius: 0.25rem;
     cursor: pointer;
     transition: all 0.5s;
 }
 .tag:hover {
-    background-color: var(--gn2);
+    background-color: var(--grn2);
     color: white;
 }
 .tag.selected {
-    background-color: var(--gn2);
+    background-color: var(--grn2);
     color: white;
 }
 
@@ -88,8 +91,8 @@ code {
 .search-wrapper input {
     width: 100%;
     padding: 0.5rem 2.5rem 0.5rem 1rem;
-    border: 1px solid var(--gn2);
-    border-radius: 9999px;
+    border: 2px solid var(--gry);
+    border-radius: 10px;
     font-size: 1rem;
 }
 .search-button {
@@ -99,30 +102,36 @@ code {
     transform: translateY(-50%);
     background: none;
     border: none;
+    border-radius: 0.25rem;
     cursor: pointer;
     padding: 0.25rem;
 }
 .search-button img {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    transition: filter 0.5s;
+}
+.search-button img:hover {
+    filter: invert(46%) sepia(11%) saturate(634%) hue-rotate(67deg) brightness(92%) contrast(86%);
 }
 
 /* -------------------------------------------------------------- */
 /* reset button */
-.reset-button {
+button.reset-button {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background-color: var(--gn2);
-    color: white;
+    background-color: var(--org);
+    color: var(--blk);
     border: none;
-    border-radius: 9999px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background-color 0.5s;
+    transition: 0.5s;
 }
 .reset-button:hover {
-    background-color: #556249;
+    color: white;
+    background-color: var(--brn);
 }
 
 /* -------------------------------------------------------------- */
@@ -131,25 +140,82 @@ table.csv-table {
     border-collapse: collapse;
     width: 100%;
 }
-table.csv-table tr {
-    border-bottom: 1px solid var(--gn2);
-    transition-duration: 0.5s;
-}
 table.csv-table th {
-    background-color: var(--gy) !important;
+    font-family: serif !important;
+    color: white;
+    background-color: var(--grn2) !important;
     height: 50px;
     vertical-align: bottom;
     text-align: left;
     padding: 0 20px 10px 5px;
 }
-table.csv-table tr:hover:not(:first-child) {
-    background-color: var(--or);
+table.csv-table tr {
+    border-bottom: 1px solid var(--grn2);
+    transition-duration: 0.5s;
+}
+table.csv-table tr:hover {
+    background-color: var(--org);
 }
 table.csv-table td {
     vertical-align: top;
     padding: 10px;
 }
 
+/* -------------------------------------------------------------- */
+/* phone number container */
+.phone-num-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background-color: var(--gry);
+    border-radius: 0.25rem;
+    width: fit-content;
+}.phone-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    /* filter: invert(46%) sepia(11%) saturate(634%) hue-rotate(67deg) brightness(92%) contrast(86%); */
+}
+.phone-num {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--grn2);
+}
+.description {
+    margin-top: 0.5rem;
+}
+
+/* -------------------------------------------------------------- */
+/* table tag container */
+.tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* table tags */
+.table-tag {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--grn);
+    color: var(--blk);
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.5s;
+}
+.table-tag:hover {
+    background-color: var(--grn2);
+    color: white;
+}
+.table-tag.selected {
+    background-color: var(--grn2);
+    color: white;
+}
+
+/* -------------------------------------------------------------- */
 /* pagination */
 .pagination {
     display: flex;
@@ -162,29 +228,33 @@ table.csv-table td {
 }
 button.page-n, button.page-np, .current-page {
     font-size: 0.9em;
-    color: var(--bk);
-    background-color: var(--gn);
-    border: 1px solid var(--gn2);
+    color: var(--blk);
+    background-color: var(--grn);
+    border: 1px solid var(--grn2);
     width: 35px;
     height: 35px;
     border-radius: 35px;
     text-align: center;
     display: flex;
     justify-content: center; /* Center the content inside the button */
-    /* align-items: center; Center vertically */
+    align-items: center; /* Center vertically */
     margin: 5px;
     cursor: pointer;
     transition-duration: 0.5s;
 }
 button.page-n:hover, button.page-np:hover { 
     color: white;
-    background-color: var(--gn2);
+    background-color: var(--grn2);
 } 
+.current-page {
+    background-color: var(--grn2);
+    color: white;
+}
 .pagination span {
     margin: 0 5px;
 }
 
-
+/* ============================================================= */
 /* documentation */
 table.date {
     border: 0;

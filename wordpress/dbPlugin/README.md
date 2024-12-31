@@ -23,7 +23,13 @@
 
 ## Version History
 `2.8.4`
-- [ ] Add page controls
+- [x] Add page controls
+- [x] Edit CSS
+  - [x] Smaller font
+  - [x] Uniform `border-radius`
+  - [x] Disable line break in tags
+- [x] Database.csv
+  - [x] Combine phone# and description
 ***
 `2.8.3` `2.8.2` *2024.12.27*
 - Fix resource table display issue

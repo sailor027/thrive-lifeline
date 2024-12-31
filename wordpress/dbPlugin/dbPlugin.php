@@ -2,10 +2,10 @@
 //========================================================================================================
 /*
 Plugin Name: Database Plugin
-Plugin URI: https://github.com/khruc-sail/thrive-lifeline/tree/d59726f87327825c7547e7f6fae340d5a9a5359e/wordpress/dbPlugin
+Plugin URI: https://github.com/sailor027/thrive-lifeline/tree/main/wordpress/dbPlugin
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.8.3
-Date: 2024.12.27
+Version: 2.8.4
+Date: 2024.12.30
 Author: Ko Horiuchi
 License: MIT
 */
@@ -28,8 +28,9 @@ error_reporting(E_ALL);
 // Define plugin paths securely
 $plugin_dir = wp_normalize_path(plugin_dir_path(DBPLUGIN_FILE));
 $resourcesFile = $plugin_dir . 'crisisResources.csv';
-$docsFile = $plugin_dir . 'documentations.md';
+$docsFile = $plugin_dir . 'README.md';
 $searchImg = $plugin_dir . 'media/search.svg';
+$phoneImg = $plugin_dir . 'media/phone.svg';
 
 //--------------------------------------------------------------------------------------------
 // Enqueue custom styles
@@ -138,7 +139,7 @@ function sanitize_tag_array($tags) {
  * @return string HTML output of the resources table
  */
 function displayResourcesShortcode($atts = array()) {
-    global $resourcesFile, $searchImg;
+    global $resourcesFile, $searchImg, $phoneImg;
 
     // Verify file existence
     if (!file_exists($resourcesFile)) {
@@ -153,6 +154,12 @@ function displayResourcesShortcode($atts = array()) {
     $searchTerms = array_filter(explode(' ', $searchQuery));
     $selectedTags = isset($_GET['tags']) ? sanitize_tag_array($_GET['tags']) : array();
 
+    // Set up pagination variables
+    $rowsPerPage = 10; // Number of rows per page
+    $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
+    $startRow = ($currentPage - 1) * $rowsPerPage;
+    $paginationRange = 2; // Number of page numbers to show on each side of current page
+
     ob_start();
 
     // Display search form
@@ -161,7 +168,7 @@ function displayResourcesShortcode($atts = array()) {
     echo '<div class="search-wrapper">';
     echo '<input type="text" id="resourceSearch" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
     echo '<button type="button" class="search-button" aria-label="Search">';
-    echo '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . 'media/search.svg') . '" alt="Search">';
+    echo '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . $searchImg) . '" alt="Search">';
     echo '</button>';
     echo '</div>';
     echo '<button type="button" class="reset-button" onclick="resetFilters()">';
@@ -208,13 +215,120 @@ function displayResourcesShortcode($atts = array()) {
     echo '<div id="resourceTableContainer" data-version="' . esc_attr(DBPLUGIN_VERSION) . '">';
     echo '<table class="csv-table">';
     echo '<thead>';
-    echo '<tr><th>Resource</th><th>Hotline Phone/Text</th><th>Resource Description</th><th>Keywords</th></tr>';
+    echo '<tr><th>Resource</th><th>Resource Description</th><th>Keywords</th></tr>';
     echo '</thead>';
     echo '<tbody id="resourceTableBody">';
-    echo '<tr><td colspan="4" class="text-center">Loading resources...</td></tr>';
+
+    $fileHandle = fopen($resourcesFile, 'r');
+    if ($fileHandle !== false) {
+        $headers = fgetcsv($fileHandle);
+        $displayedRows = 0;
+        $totalRows = 0;
+
+        while (($row = fgetcsv($fileHandle)) !== false) {
+            if (isset($row[0]) && strpos($row[0], '#') === 0) {
+                continue;
+            }
+        
+            $resource = isset($row[0]) ? $row[0] : '';
+            $phoneNum = isset($row[1]) ? $row[1] : '';
+            $description = isset($row[2]) ? $row[2] : '';
+            $keywords = isset($row[3]) ? array_map('trim', explode(',', $row[3])) : array();
+            $website = isset($row[4]) ? $row[4] : '';
+        
+            // Combine phone number with description if it exists
+            $combinedDescription = $description;
+            if (!empty($phoneNum)) {
+                $phoneIconHtml = '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . $phoneImg) . '" alt="Phone" class="phone-icon">';
+                $phoneNumHtml = '<div class="phone-num-container">' . $phoneIconHtml . '<span class="phone-num">' . esc_html($phoneNum) . '</span></div>';
+                $combinedDescription = $phoneNumHtml . '<div class="description">' . esc_html($description) . '</div>';
+            }
+        
+            // Check if row matches search criteria
+            $matchesSearch = empty($searchTerms) || array_reduce($searchTerms, function($carry, $term) use ($row) {
+                return $carry && stripos(implode(' ', $row), $term) !== false;
+            }, true);
+        
+            $matchesTags = empty($selectedTags) || array_reduce($selectedTags, function($carry, $tag) use ($keywords) {
+                return $carry && in_array($tag, array_map('trim', $keywords));
+            }, true);
+        
+            if ($matchesSearch && $matchesTags) {
+                $totalRows++;
+                if ($totalRows > $startRow && $displayedRows < $rowsPerPage) {
+                    echo '<tr>';
+                    
+                    // Resource column with website link
+                    echo '<td>';
+                    if (!empty($website)) {
+                        echo '<a href="' . esc_url($website) . '" target="_blank" rel="noopener noreferrer">' . 
+                             esc_html($resource) . '</a>';
+                    } else {
+                        echo esc_html($resource);
+                    }
+                    echo '</td>';
+                    
+                    // Combined description column with phone number if present
+                    echo '<td>' . $combinedDescription . '</td>';
+                    
+                    // Keywords column with clickable tags
+                    echo '<td><div class="tag-container">';
+                    foreach ($keywords as $keyword) {
+                        if (!empty($keyword)) {
+                            $isSelected = in_array($keyword, $selectedTags) ? 'selected' : '';
+                            printf(
+                                '<button type="button" class="table-tag %s" ' .
+                                'onclick="toggleTagFilter(\'%s\')" ' .
+                                'data-tag="%s">%s</button>',
+                                esc_attr($isSelected),
+                                esc_attr($keyword),
+                                esc_attr($keyword),
+                                esc_html($keyword)
+                            );
+                        }
+                    }
+                    echo '</div></td>';
+                    
+                    echo '</tr>';
+                    $displayedRows++;
+                }
+            }
+        }
+        fclose($fileHandle);
+    }
+
     echo '</tbody>';
     echo '</table>';
-    echo '</div>';
+
+    // Add pagination
+    if ($totalRows > $rowsPerPage) {
+        $totalPages = ceil($totalRows / $rowsPerPage);
+        echo '<div class="pagination">';
+        
+        // Previous page button
+        if ($currentPage > 1) {
+            echo '<button class="page-np" onclick="changePage(' . ($currentPage - 1) . ')">&lt;</button>';
+        }
+
+        // Page numbers
+        for ($i = max(1, $currentPage - $paginationRange); 
+             $i <= min($totalPages, $currentPage + $paginationRange); $i++) {
+            if ($i == $currentPage) {
+                echo '<span class="current-page">' . $i . '</span>';
+            } else {
+                echo '<button class="page-n" onclick="changePage(' . $i . ')">' . $i . '</button>';
+            }
+        }
+
+        // Next page button
+        if ($currentPage < $totalPages) {
+            echo '<button class="page-np" onclick="changePage(' . ($currentPage + 1) . ')">&gt;</button>';
+        }
+        
+        echo '</div>';
+    }
+
+    echo '</div>'; // Close resourceTableContainer
 
     return ob_get_clean();
 }
