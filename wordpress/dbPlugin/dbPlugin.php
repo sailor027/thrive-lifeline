@@ -4,8 +4,8 @@
 Plugin Name: Database Plugin
 Plugin URI: https://github.com/sailor027/thrive-lifeline/tree/main/wordpress/dbPlugin
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.8.4
-Date: 2024.12.30
+Version: 2.8.5
+Date: 2024.12.31
 Author: Ko Horiuchi
 License: MIT
 */
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin version and constants
-define('DBPLUGIN_VERSION', '2.8.3');
+// define('DBPLUGIN_VERSION', '2.8.4');
 define('DBPLUGIN_FILE', __FILE__);
 
 // Enable error reporting
@@ -38,8 +38,7 @@ function dbPlugin_enqueueStyles() {
     wp_enqueue_style(
         'dbPlugin-styles', 
         plugin_dir_url(DBPLUGIN_FILE) . 'style.css',
-        array(),
-        DBPLUGIN_VERSION
+        array()
     );
 }
 add_action('wp_enqueue_scripts', 'dbPlugin_enqueueStyles');
@@ -50,7 +49,6 @@ function dbPlugin_enqueueScript() {
         'dbPlugin-script', 
         plugin_dir_url(DBPLUGIN_FILE) . 'script.js', 
         array('jquery'), 
-        DBPLUGIN_VERSION, 
         true
     );
     wp_localize_script(
@@ -58,8 +56,7 @@ function dbPlugin_enqueueScript() {
         'dbPluginData', 
         array(
             'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('dbPlugin_nonce'),
-            'version' => DBPLUGIN_VERSION
+            'nonce' => wp_create_nonce('dbPlugin_nonce')
         )
     );
 }
@@ -212,7 +209,7 @@ function displayResourcesShortcode($atts = array()) {
     echo '</div>'; // Close resources-search-container
 
     // Display resource table
-    echo '<div id="resourceTableContainer" data-version="' . esc_attr(DBPLUGIN_VERSION) . '">';
+    echo '<div id="resourceTableContainer">';
     echo '<table class="csv-table">';
     echo '<thead>';
     echo '<tr><th>Resource</th><th>Resource Description</th><th>Keywords</th></tr>';

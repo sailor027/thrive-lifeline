@@ -1,8 +1,8 @@
 # Database Plugin
 ## Plugin Information
 
-- Version: `2.8.3`
-- Last updated: `2024.12.27` ([version history](#version-history))
+- Version: `2.8.5`
+- Last updated: `2024.12.31` ([version history](#version-history))
 
 ## How to use the plugin
 1. Ensure the CSV file TESTthrive_resources.csv is placed in the plugin directory: `plugin_dir_path(__FILE__);`
@@ -22,6 +22,9 @@
 - URLs must include http:// or https://
 
 ## Version History
+`2.8.5`
+- Remove version control
+***
 `2.8.4`
 - [x] Add page controls
 - [x] Edit CSS
