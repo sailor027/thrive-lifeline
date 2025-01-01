@@ -5,25 +5,32 @@ jQuery(document).ready(function($) {
 //==================================================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Debug logging
-    console.log('Script initialized');
-    console.log('WordPress data:', dbPluginData);
     let resources = [];
     let selectedTags = new Set();
     
-    // Load and initialize the resources
+    // Ensure dbPluginData is available
+    if (typeof dbPluginData === 'undefined') {
+        console.error('dbPluginData not found. Please check WordPress plugin configuration.');
+        return;
+    }
+
+    // Initialize search functionality
+    const searchInput = document.getElementById('resourceSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(filterResources, 300));
+    }
+
+    // Load resources via AJAX
     async function loadResources() {
         try {
-            // Fetch resources using WordPress AJAX
+            const formData = new FormData();
+            formData.append('action', 'get_resources');
+            formData.append('nonce', dbPluginData.nonce);
+
             const response = await fetch(dbPluginData.ajaxurl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'get_resources',
-                    nonce: dbPluginData.nonce
-                })
+                body: formData,
+                credentials: 'same-origin'
             });
 
             if (!response.ok) {
@@ -31,144 +38,129 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            
-            if (!data.success) {
-                throw new Error(data.data || 'Failed to load resources');
+            if (data.success && Array.isArray(data.data)) {
+                resources = data.data;
+                console.log('Resources loaded:', resources.length);
+                initializeTags();
+                filterResources();
+            } else {
+                throw new Error('Invalid response format');
             }
-
-            resources = data.data;
-            console.log('Resources loaded:', resources.length);
-            
-            initializeTags();
-            renderTable(resources);
-            
         } catch (error) {
             console.error('Error loading resources:', error);
             document.getElementById('resourceTableBody').innerHTML = 
-                '<tr><td colspan="4">Error loading resources. Please try refreshing the page.</td></tr>';
+                '<tr><td colspan="3">Error loading resources. Please try refreshing the page.</td></tr>';
         }
     }
 
-    // Initialize tags from resources
+    // Initialize tags from loaded resources
     function initializeTags() {
         const tagsContainer = document.getElementById('filterTags');
         if (!tagsContainer) return;
 
-        const allTags = new Set();
+        const uniqueTags = new Set();
         resources.forEach(resource => {
-            const tags = resource.Keywords.split(',').map(tag => tag.trim());
-            tags.forEach(tag => {
-                if (tag) allTags.add(tag);
-            });
+            if (resource.Keywords) {
+                resource.Keywords.split(',').forEach(tag => {
+                    uniqueTags.add(tag.trim());
+                });
+            }
         });
 
-        const sortedTags = Array.from(allTags).sort();
-        
+        const sortedTags = Array.from(uniqueTags).sort();
         tagsContainer.innerHTML = sortedTags.map(tag => 
             `<button type="button" class="tag" data-tag="${tag}">${tag}</button>`
         ).join('');
 
-        // Add click handlers for tags
-        tagsContainer.querySelectorAll('.tag').forEach(tagElement => {
-            tagElement.addEventListener('click', () => {
-                const tag = tagElement.dataset.tag;
-                if (selectedTags.has(tag)) {
-                    selectedTags.delete(tag);
-                    tagElement.classList.remove('selected');
+        // Add click handlers to tags
+        document.querySelectorAll('.tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                const tagValue = this.getAttribute('data-tag');
+                if (selectedTags.has(tagValue)) {
+                    selectedTags.delete(tagValue);
+                    this.classList.remove('selected');
                 } else {
-                    selectedTags.add(tag);
-                    tagElement.classList.add('selected');
+                    selectedTags.add(tagValue);
+                    this.classList.add('selected');
                 }
                 filterResources();
             });
         });
     }
 
-    // Render the resources table
-    function renderTable(resourcesToShow) {
-        const tbody = document.getElementById('resourceTableBody');
-        if (!tbody) return;
-
-        if (!resourcesToShow.length) {
-            tbody.innerHTML = '<tr><td colspan="4">No matching resources found</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = resourcesToShow.map(resource => `
-            <tr>
-                <td>${resource.Resource}</td>
-                <td>${resource['Hotline Phone/Text']}</td>
-                <td>${resource['Resource Description']}</td>
-                <td>${formatTags(resource.Keywords)}</td>
-            </tr>
-        `).join('');
+    // Debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
     }
 
-    // Format tags as individual tag elements
-    function formatTags(tagsString) {
-        return tagsString.split(',')
-            .map(tag => tag.trim())
-            .filter(tag => tag)
-            .map(tag => `<span class="tag">${tag}</span>`)
-            .join(' ');
-    }
-
-    // Filter resources based on search and selected tags
+    // Filter resources based on search and tags
     function filterResources() {
-        const searchInput = document.getElementById('resourceSearch');
-        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-
-        const filteredResources = resources.filter(resource => {
-            const matchesSearch = !searchTerm || 
-                Object.values(resource).some(value => 
-                    value.toLowerCase().includes(searchTerm)
-                );
-
+        const searchValue = searchInput?.value.toLowerCase() || '';
+        const rows = document.querySelectorAll('#resourceTableBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const tags = Array.from(row.querySelectorAll('.table-tag'))
+                .map(tag => tag.textContent.trim());
+            
+            const matchesSearch = !searchValue || text.includes(searchValue);
             const matchesTags = selectedTags.size === 0 || 
-                Array.from(selectedTags).every(tag =>
-                    resource.Keywords.toLowerCase().includes(tag.toLowerCase())
-                );
+                Array.from(selectedTags).every(tag => tags.includes(tag));
+            
+            row.style.display = matchesSearch && matchesTags ? '' : 'none';
 
-            return matchesSearch && matchesTags;
+            // Update table tags to match selected state
+            row.querySelectorAll('.table-tag').forEach(tableTag => {
+                const tagValue = tableTag.textContent.trim();
+                tableTag.classList.toggle('selected', selectedTags.has(tagValue));
+            });
         });
 
-        renderTable(filteredResources);
+        updateResultCount();
     }
 
-    // Set up search functionality
-    const searchInput = document.getElementById('resourceSearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', filterResources);
+    // Update result count display
+    function updateResultCount() {
+        const visibleRows = document.querySelectorAll('#resourceTableBody tr[style=""]').length;
+        const totalRows = document.querySelectorAll('#resourceTableBody tr').length;
+        const countDisplay = document.querySelector('.result-count');
+        
+        if (countDisplay) {
+            countDisplay.textContent = `Showing ${visibleRows} of ${totalRows} resources`;
+        }
     }
 
-    // Reset filters function
+    // Reset filters
     window.resetFilters = function() {
+        if (searchInput) searchInput.value = '';
         selectedTags.clear();
-        document.querySelectorAll('.tag.selected').forEach(tag => {
+        document.querySelectorAll('.tag').forEach(tag => {
             tag.classList.remove('selected');
         });
-        if (searchInput) {
-            searchInput.value = '';
-        }
         filterResources();
     };
 
-    // Initialize on page load
+    // Page navigation
+    window.changePage = function(page) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('pg', page);
+        window.location.search = urlParams.toString();
+    };
+
+    // Toggle tag from table
+    window.toggleTagFilter = function(tag) {
+        const tagButton = document.querySelector(`.tag[data-tag="${tag}"]`);
+        if (tagButton) {
+            tagButton.click();
+        }
+    };
+
+    // Initialize the resources
     loadResources();
 });
-
-//==================================================================================================
-function toggleTagFilter(tag) {
-    // Find the corresponding filter tag button
-    const filterTag = document.querySelector(`.tag[data-tag="${tag}"]`);
-    if (filterTag) {
-        // Simulate a click on the filter tag
-        filterTag.click();
-        
-        // Update table tags to match the filter tag state
-        const tableTagButtons = document.querySelectorAll(`.table-tag[data-tag="${tag}"]`);
-        tableTagButtons.forEach(button => {
-            button.classList.toggle('selected', filterTag.classList.contains('selected'));
-        });
-    }
-}

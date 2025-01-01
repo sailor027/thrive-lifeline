@@ -52,8 +52,8 @@ function dbPlugin_enqueueScript() {
         true
     );
     wp_localize_script(
-        'dbPlugin-script', 
-        'dbPluginData', 
+        'dbPlugin-script',
+        'dbPluginData',
         array(
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('dbPlugin_nonce')
