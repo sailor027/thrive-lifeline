@@ -4,8 +4,8 @@
 Plugin Name: Database Plugin
 Plugin URI: https://github.com/sailor027/thrive-lifeline/tree/main/wordpress/dbPlugin
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.8.5
-Date: 2024.12.31
+Version: 2.8.6
+Date: 2025.01.01
 Author: Ko Horiuchi
 License: MIT
 */

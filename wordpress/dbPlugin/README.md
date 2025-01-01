@@ -22,7 +22,10 @@
 - URLs must include http:// or https://
 
 ## Version History
-`2.8.5`
+`2.8.6` *2025.01.01*
+- Fix table display error
+***
+`2.8.5` *2024.12.31*
 - Remove version control
 ***
 `2.8.4`
