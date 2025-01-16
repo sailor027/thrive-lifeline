@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function filterResources() {
         const searchValue = searchInput?.value.toLowerCase() || '';
         const rows = document.querySelectorAll('#resourceTableBody tr');
+        let visibleCount = 0;
         
         rows.forEach(row => {
             const text = row.textContent.toLowerCase();
@@ -113,16 +114,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchesTags = selectedTags.size === 0 || 
                 Array.from(selectedTags).every(tag => tags.includes(tag));
             
-            row.style.display = matchesSearch && matchesTags ? '' : 'none';
-
-            // Update table tags to match selected state
-            row.querySelectorAll('.table-tag').forEach(tableTag => {
-                const tagValue = tableTag.textContent.trim();
-                tableTag.classList.toggle('selected', selectedTags.has(tagValue));
-            });
+            // Show/hide row based on filters
+            const visible = matchesSearch && matchesTags;
+            row.style.display = visible ? '' : 'none';
+            
+            if (visible) {
+                visibleCount++;
+            }
         });
-
-        updateResultCount();
+        
+        // Reset to first page when filters change
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('pg') && visibleCount > 0) {
+            urlParams.set('pg', '1');
+            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+            // Only update URL if filters have changed
+            if (window.location.search !== `?${urlParams.toString()}`) {
+                window.history.pushState({}, '', newUrl);
+            }
+        }
+        
+        updateResultCount(visibleCount);
     }
 
     // Update result count display
@@ -148,9 +160,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Page navigation
     window.changePage = function(page) {
+        // Preserve all current search parameters and tags
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // Update page number
         urlParams.set('pg', page);
-        window.location.search = urlParams.toString();
+        
+        // Preserve search query if it exists
+        const searchInput = document.getElementById('resourceSearch');
+        if (searchInput && searchInput.value) {
+            urlParams.set('kw', searchInput.value);
+        }
+        
+        // Preserve selected tags
+        const selectedTags = Array.from(document.querySelectorAll('.tag.selected'))
+            .map(tag => tag.dataset.tag);
+        if (selectedTags.length > 0) {
+            urlParams.delete('tags');
+            selectedTags.forEach(tag => urlParams.append('tags', tag));
+        }
+        
+        // Update URL and reload
+        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+        window.location.href = newUrl;
     };
 
     // Toggle tag from table

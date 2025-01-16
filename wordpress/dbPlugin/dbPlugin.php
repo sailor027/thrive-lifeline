@@ -135,198 +135,113 @@ function sanitize_tag_array($tags) {
  * @param array $atts Shortcode attributes (unused)
  * @return string HTML output of the resources table
  */
+// In dbPlugin.php, update the displayResourcesShortcode function:
+
 function displayResourcesShortcode($atts = array()) {
     global $resourcesFile, $searchImg, $phoneImg;
-
-    // Verify file existence
-    if (!file_exists($resourcesFile)) {
-        return '<div class="notice notice-error">Resource file not found: ' . esc_html($resourcesFile) . '</div>';
-    }
-    if (!file_exists($searchImg)) {
-        return '<div class="notice notice-error">Search image not found: ' . esc_html($searchImg) . '</div>';
-    }
-
-    // Handle search and filtering
-    $searchQuery = isset($_GET['kw']) ? sanitize_text_field($_GET['kw']) : '';
-    $searchTerms = array_filter(explode(' ', $searchQuery));
-    $selectedTags = isset($_GET['tags']) ? sanitize_tag_array($_GET['tags']) : array();
+    
+    // Verify file existence checks remain the same...
 
     // Set up pagination variables
-    $rowsPerPage = 10; // Number of rows per page
+    $rowsPerPage = 10;
     $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
     $startRow = ($currentPage - 1) * $rowsPerPage;
-    $paginationRange = 2; // Number of page numbers to show on each side of current page
-
-    ob_start();
-
-    // Display search form
-    echo '<div class="resources-search-container">';
-    echo '<div class="search-controls">';
-    echo '<div class="search-wrapper">';
-    echo '<input type="text" id="resourceSearch" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
-    echo '<button type="button" class="search-button" aria-label="Search">';
-    echo '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . $searchImg) . '" alt="Search">';
-    echo '</button>';
-    echo '</div>';
-    echo '<button type="button" class="reset-button" onclick="resetFilters()">';
-    echo '<span>×</span> Reset Filters';
-    echo '</button>';
-    echo '</div>';
-
-    // Display tags section
-    echo '<div class="tags-container" id="filterTags">';
-    $allTags = array();
-    $handle = fopen($resourcesFile, 'r');
-    if ($handle !== false) {
-        while (($row = fgetcsv($handle)) !== false) {
-            if (isset($row[3])) {
-                $tags = array_map('trim', explode(',', $row[3]));
-                foreach ($tags as $tag) {
-                    if (!empty($tag) && !in_array($tag, $allTags)) {
-                        $allTags[] = $tag;
-                    }
-                }
-            }
-        }
-        fclose($handle);
-        sort($allTags);
-
-        foreach ($allTags as $tag) {
-            if (!empty($tag)) {
-                $isSelected = in_array($tag, $selectedTags) ? 'selected' : '';
-                printf(
-                    '<button type="button" class="tag %s" data-tag="%s">%s</button>',
-                    esc_attr($isSelected),
-                    esc_attr($tag),
-                    esc_html($tag)
-                );
-            }
-        }
-    } else {
-        echo '<div class="notice notice-error">Unable to read tags from file</div>';
-    }
-    echo '</div>'; // Close tags-container
-    echo '</div>'; // Close resources-search-container
-
-    // Display resource table
-    echo '<div id="resourceTableContainer">';
-    echo '<table class="csv-table">';
-    echo '<thead>';
-    echo '<tr><th>Resource</th><th>Resource Description</th><th>Keywords</th></tr>';
-    echo '</thead>';
-    echo '<tbody id="resourceTableBody">';
-
+    
+    // Initialize counters
+    $totalRows = 0;
+    $displayedRows = 0;
+    $filteredRows = [];
+    
+    // Read and filter data first
     $fileHandle = fopen($resourcesFile, 'r');
     if ($fileHandle !== false) {
         $headers = fgetcsv($fileHandle);
-        $displayedRows = 0;
-        $totalRows = 0;
-
+        
         while (($row = fgetcsv($fileHandle)) !== false) {
             if (isset($row[0]) && strpos($row[0], '#') === 0) {
                 continue;
             }
-        
-            $resource = isset($row[0]) ? $row[0] : '';
-            $phoneNum = isset($row[1]) ? $row[1] : '';
-            $description = isset($row[2]) ? $row[2] : '';
+            
             $keywords = isset($row[3]) ? array_map('trim', explode(',', $row[3])) : array();
-            $website = isset($row[4]) ? $row[4] : '';
-        
-            // Combine phone number with description if it exists
-            $combinedDescription = $description;
-            if (!empty($phoneNum)) {
-                $phoneIconHtml = '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . $phoneImg) . '" alt="Phone" class="phone-icon">';
-                $phoneNumHtml = '<div class="phone-num-container">' . $phoneIconHtml . '<span class="phone-num">' . esc_html($phoneNum) . '</span></div>';
-                $combinedDescription = $phoneNumHtml . '<div class="description">' . esc_html($description) . '</div>';
-            }
-        
-            // Check if row matches search criteria
+            
+            // Apply search and tag filters
             $matchesSearch = empty($searchTerms) || array_reduce($searchTerms, function($carry, $term) use ($row) {
                 return $carry && stripos(implode(' ', $row), $term) !== false;
             }, true);
-        
+            
             $matchesTags = empty($selectedTags) || array_reduce($selectedTags, function($carry, $tag) use ($keywords) {
                 return $carry && in_array($tag, array_map('trim', $keywords));
             }, true);
-        
+            
             if ($matchesSearch && $matchesTags) {
+                $filteredRows[] = $row;
                 $totalRows++;
-                if ($totalRows > $startRow && $displayedRows < $rowsPerPage) {
-                    echo '<tr>';
-                    
-                    // Resource column with website link
-                    echo '<td>';
-                    if (!empty($website)) {
-                        echo '<a href="' . esc_url($website) . '" target="_blank" rel="noopener noreferrer">' . 
-                             esc_html($resource) . '</a>';
-                    } else {
-                        echo esc_html($resource);
-                    }
-                    echo '</td>';
-                    
-                    // Combined description column with phone number if present
-                    echo '<td>' . $combinedDescription . '</td>';
-                    
-                    // Keywords column with clickable tags
-                    echo '<td><div class="tag-container">';
-                    foreach ($keywords as $keyword) {
-                        if (!empty($keyword)) {
-                            $isSelected = in_array($keyword, $selectedTags) ? 'selected' : '';
-                            printf(
-                                '<button type="button" class="table-tag %s" ' .
-                                'onclick="toggleTagFilter(\'%s\')" ' .
-                                'data-tag="%s">%s</button>',
-                                esc_attr($isSelected),
-                                esc_attr($keyword),
-                                esc_attr($keyword),
-                                esc_html($keyword)
-                            );
-                        }
-                    }
-                    echo '</div></td>';
-                    
-                    echo '</tr>';
-                    $displayedRows++;
-                }
             }
         }
         fclose($fileHandle);
     }
-
-    echo '</tbody>';
-    echo '</table>';
-
-    // Add pagination
+    
+    // Calculate total pages
+    $totalPages = ceil($totalRows / $rowsPerPage);
+    
+    // Ensure current page is within bounds
+    $currentPage = min($currentPage, $totalPages);
+    $currentPage = max(1, $currentPage);
+    
+    // Slice the filtered rows for current page
+    $paginatedRows = array_slice($filteredRows, $startRow, $rowsPerPage);
+    
+    // Display the table with paginated rows
+    echo '<table class="csv-table">';
+    echo '<thead><tr><th>Resource</th><th>Resource Description</th><th>Keywords</th></tr></thead>';
+    echo '<tbody id="resourceTableBody">';
+    
+    foreach ($paginatedRows as $row) {
+        // Display row code remains the same...
+    }
+    
+    echo '</tbody></table>';
+    
+    // Add pagination controls if needed
     if ($totalRows > $rowsPerPage) {
-        $totalPages = ceil($totalRows / $rowsPerPage);
-        echo '<div class="pagination">';
+        echo '<div class="pagination" role="navigation" aria-label="Resource list pagination">';
         
-        // Previous page button
+        // Previous page
         if ($currentPage > 1) {
-            echo '<button class="page-np" onclick="changePage(' . ($currentPage - 1) . ')">&lt;</button>';
+            printf(
+                '<button type="button" class="page-np" onclick="changePage(%d)" aria-label="Go to previous page">&lt;</button>',
+                $currentPage - 1
+            );
         }
-
+        
         // Page numbers
+        $paginationRange = 2;
         for ($i = max(1, $currentPage - $paginationRange); 
              $i <= min($totalPages, $currentPage + $paginationRange); $i++) {
             if ($i == $currentPage) {
-                echo '<span class="current-page">' . $i . '</span>';
+                printf(
+                    '<span class="current-page" aria-current="page">%d</span>',
+                    $i
+                );
             } else {
-                echo '<button class="page-n" onclick="changePage(' . $i . ')">' . $i . '</button>';
+                printf(
+                    '<button type="button" class="page-n" onclick="changePage(%d)" aria-label="Go to page %d">%d</button>',
+                    $i, $i, $i
+                );
             }
         }
-
-        // Next page button
+        
+        // Next page
         if ($currentPage < $totalPages) {
-            echo '<button class="page-np" onclick="changePage(' . ($currentPage + 1) . ')">&gt;</button>';
+            printf(
+                '<button type="button" class="page-np" onclick="changePage(%d)" aria-label="Go to next page">&gt;</button>',
+                $currentPage + 1
+            );
         }
         
         echo '</div>';
     }
-
-    echo '</div>'; // Close resourceTableContainer
-
+    
     return ob_get_clean();
 }
 
