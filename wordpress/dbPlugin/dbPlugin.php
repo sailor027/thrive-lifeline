@@ -135,9 +135,8 @@ function sanitize_tag_array($tags) {
  * @param array $atts Shortcode attributes (unused)
  * @return string HTML output of the resources table
  */
-// In dbPlugin.php, update the displayResourcesShortcode function:
 
-function displayResourcesShortcode($atts = array()) {
+ function displayResourcesShortcode($atts = array()) {
     global $resourcesFile, $searchImg, $phoneImg;
 
     // Verify file existence
@@ -150,6 +149,55 @@ function displayResourcesShortcode($atts = array()) {
     $searchTerms = array_filter(explode(' ', $searchQuery));
     $selectedTags = isset($_GET['tags']) ? sanitize_tag_array($_GET['tags']) : array();
 
+    ob_start();
+
+    // Display search form
+    echo '<div class="resources-search-container">';
+    echo '<div class="search-controls">';
+    echo '<div class="search-wrapper">';
+    echo '<input type="text" id="resourceSearch" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
+    echo '<button type="button" class="search-button" aria-label="Search">';
+    echo '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . 'media/search.svg') . '" alt="Search">';
+    echo '</button>';
+    echo '</div>';
+    echo '<button type="button" class="reset-button" onclick="resetFilters()">';
+    echo '<span>×</span> Reset Filters';
+    echo '</button>';
+    echo '</div>';
+
+    // Display tags section
+    echo '<div class="tags-container" id="filterTags">';
+    $allTags = array();
+    $handle = fopen($resourcesFile, 'r');
+    if ($handle !== false) {
+        while (($row = fgetcsv($handle)) !== false) {
+            if (isset($row[3])) {
+                $tags = array_map('trim', explode(',', $row[3]));
+                foreach ($tags as $tag) {
+                    if (!empty($tag) && !in_array($tag, $allTags)) {
+                        $allTags[] = $tag;
+                    }
+                }
+            }
+        }
+        fclose($handle);
+        sort($allTags);
+
+        foreach ($allTags as $tag) {
+            if (!empty($tag)) {
+                $isSelected = in_array($tag, $selectedTags) ? 'selected' : '';
+                printf(
+                    '<button type="button" class="tag %s" data-tag="%s">%s</button>',
+                    esc_attr($isSelected),
+                    esc_attr($tag),
+                    esc_html($tag)
+                );
+            }
+        }
+    }
+    echo '</div>'; // Close tags-container
+    echo '</div>'; // Close resources-search-container
+
     // Set up pagination variables
     $rowsPerPage = 10;
     $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
@@ -159,7 +207,7 @@ function displayResourcesShortcode($atts = array()) {
     $totalRows = 0;
     $filteredRows = array();
     
-    // Read and filter data first
+    // Read and filter data
     $fileHandle = fopen($resourcesFile, 'r');
     if ($fileHandle !== false) {
         $headers = fgetcsv($fileHandle);
@@ -198,11 +246,8 @@ function displayResourcesShortcode($atts = array()) {
     // Slice the filtered rows for current page
     $paginatedRows = array_slice($filteredRows, $startRow, $rowsPerPage);
     
-    ob_start();
-    
-    // Display search form and tags (existing code remains the same)
-    
-    // Display the table with paginated rows
+    // Display the table
+    echo '<div id="resourceTableContainer">';
     echo '<table class="csv-table">';
     echo '<thead><tr><th>Resource</th><th>Resource Description</th><th>Keywords</th></tr></thead>';
     echo '<tbody id="resourceTableBody">';
@@ -300,8 +345,11 @@ function displayResourcesShortcode($atts = array()) {
         echo '</div>';
     }
     
+    echo '</div>'; // Close resourceTableContainer
+    
     return ob_get_clean();
 }
+
 
 //--------------------------------------------------------------------------------------------
 // Add admin menu
