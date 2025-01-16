@@ -1,9 +1,3 @@
-jQuery(document).ready(function($) {
-    // console.log('Custom plugin script loaded.')
-});
-
-//==================================================================================================
-
 document.addEventListener('DOMContentLoaded', function() {
     let resources = [];
     let selectedTags = new Set();
@@ -27,8 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.addEventListener('input', debounce(filterResources, 300));
     }
 
-
-    // Update the loadResources function
+    // Load resources via AJAX
     async function loadResources() {
         try {
             const formData = new FormData();
@@ -52,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 await initializeTags();
                 
                 // Initialize search from URL if present
-                const urlParams = new URLSearchParams(window.location.search);
                 const searchQuery = urlParams.get('kw');
                 if (searchQuery && searchInput) {
                     searchInput.value = searchQuery;
@@ -84,9 +76,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const sortedTags = Array.from(uniqueTags).sort();
-        tagsContainer.innerHTML = sortedTags.map(tag => 
-            `<button type="button" class="tag" data-tag="${tag}">${tag}</button>`
-        ).join('');
+        tagsContainer.innerHTML = sortedTags.map(tag => {
+            const isSelected = selectedTags.has(tag) ? 'selected' : '';
+            return `<button type="button" class="tag ${isSelected}" data-tag="${tag}">${tag}</button>`;
+        }).join('');
 
         // Add click handlers to tags
         document.querySelectorAll('.tag').forEach(tag => {
@@ -130,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchesTags = selectedTags.size === 0 || 
                 Array.from(selectedTags).every(tag => tags.includes(tag));
             
-            // Show/hide row based on filters
             const visible = matchesSearch && matchesTags;
             row.style.display = visible ? '' : 'none';
             
@@ -139,16 +131,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Reset to first page when filters change
+        // Update URL to reflect current state
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('pg') && visibleCount > 0) {
-            urlParams.set('pg', '1');
-            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-            // Only update URL if filters have changed
-            if (window.location.search !== `?${urlParams.toString()}`) {
-                window.history.pushState({}, '', newUrl);
-            }
+        
+        // Update search parameter
+        if (searchValue) {
+            urlParams.set('kw', searchInput.value);
+        } else {
+            urlParams.delete('kw');
         }
+        
+        // Update tag parameters
+        urlParams.delete('tags');
+        if (selectedTags.size > 0) {
+            Array.from(selectedTags).forEach(tag => {
+                urlParams.append('tags', tag);
+            });
+        }
+        
+        // Reset to first page when filters change
+        if (urlParams.has('pg')) {
+            urlParams.set('pg', '1');
+        }
+        
+        // Update URL without reload
+        const newUrl = `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
+        window.history.pushState({}, '', newUrl);
         
         updateResultCount(visibleCount);
     }
@@ -191,17 +199,16 @@ document.addEventListener('DOMContentLoaded', function() {
         urlParams.set('pg', page);
         
         // Preserve search query if it exists
-        const searchInput = document.getElementById('resourceSearch');
         if (searchInput && searchInput.value) {
             urlParams.set('kw', searchInput.value);
         }
         
         // Preserve selected tags
-        const selectedTags = Array.from(document.querySelectorAll('.tag.selected'))
-            .map(tag => tag.dataset.tag);
-        if (selectedTags.length > 0) {
+        if (selectedTags.size > 0) {
             urlParams.delete('tags');
-            selectedTags.forEach(tag => urlParams.append('tags', tag));
+            Array.from(selectedTags).forEach(tag => {
+                urlParams.append('tags', tag);
+            });
         }
         
         // Update URL and reload
@@ -216,6 +223,12 @@ document.addEventListener('DOMContentLoaded', function() {
             tagButton.click();
         }
     };
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', function() {
+        // Reload the page to reflect the URL state
+        window.location.reload();
+    });
 
     // Initialize the resources
     loadResources();

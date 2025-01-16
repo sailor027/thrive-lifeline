@@ -4,8 +4,8 @@
 Plugin Name: Database Plugin
 Plugin URI: https://github.com/sailor027/thrive-lifeline/tree/main/wordpress/dbPlugin
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.8.6
-Date: 2025.01.01
+Version: 2.9.4
+Date: 2025.01.16
 Author: Ko Horiuchi
 License: MIT
 */
@@ -17,7 +17,6 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin version and constants
-// define('DBPLUGIN_VERSION', '2.8.4');
 define('DBPLUGIN_FILE', __FILE__);
 
 // Enable error reporting
@@ -33,7 +32,7 @@ $searchImg = $plugin_dir . 'media/search.svg';
 $phoneImg = $plugin_dir . 'media/phone.svg';
 
 //--------------------------------------------------------------------------------------------
-// Enqueue custom styles
+// Enqueue custom styles and scripts
 function dbPlugin_enqueueStyles() {
     wp_enqueue_style(
         'dbPlugin-styles', 
@@ -43,7 +42,6 @@ function dbPlugin_enqueueStyles() {
 }
 add_action('wp_enqueue_scripts', 'dbPlugin_enqueueStyles');
 
-// Enqueue JavaScript
 function dbPlugin_enqueueScript() {
     wp_enqueue_script(
         'dbPlugin-script', 
@@ -63,7 +61,7 @@ function dbPlugin_enqueueScript() {
 add_action('wp_enqueue_scripts', 'dbPlugin_enqueueScript');
 
 //--------------------------------------------------------------------------------------------
-// Add AJAX handlers for both logged-in and non-logged-in users
+// AJAX handlers
 add_action('wp_ajax_get_resources', 'handle_get_resources');
 add_action('wp_ajax_nopriv_get_resources', 'handle_get_resources');
 
@@ -86,23 +84,25 @@ function handle_get_resources() {
     $handle = fopen($resourcesFile, 'r');
     
     if ($handle !== false) {
-        // Skip header row
-        $headers = fgetcsv($handle);
-        
-        // Read data rows
-        while (($row = fgetcsv($handle)) !== false) {
-            // Skip commented rows
-            if (isset($row[0]) && strpos($row[0], '#') === 0) {
-                continue;
-            }
+        try {
+            $headers = fgetcsv($handle);
             
-            // Create associative array using headers
-            if (count($row) === count($headers)) {
-                $resource = array_combine($headers, $row);
-                $resources[] = $resource;
+            while (($row = fgetcsv($handle)) !== false) {
+                if (isset($row[0]) && strpos($row[0], '#') === 0) {
+                    continue;
+                }
+                
+                if (count($row) === count($headers)) {
+                    $resource = array_combine($headers, $row);
+                    $resources[] = $resource;
+                }
             }
+        } catch (Exception $e) {
+            wp_send_json_error('Error processing CSV: ' . $e->getMessage());
+            return;
+        } finally {
+            fclose($handle);
         }
-        fclose($handle);
         
         wp_send_json_success($resources);
     } else {
@@ -114,13 +114,6 @@ function handle_get_resources() {
 // Register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
 
-//========================================================================================================
-/**
- * Sanitize an array of tags
- *
- * @param array $tags Array of tags to sanitize
- * @return array Sanitized array of tags
- */
 function sanitize_tag_array($tags) {
     if (!is_array($tags)) {
         return array();
@@ -128,20 +121,15 @@ function sanitize_tag_array($tags) {
     return array_map('sanitize_text_field', $tags);
 }
 
-//========================================================================================================
-/**
- * Display resources table with search and filtering capabilities
- *
- * @param array $atts Shortcode attributes (unused)
- * @return string HTML output of the resources table
- */
-
- function displayResourcesShortcode($atts = array()) {
+function displayResourcesShortcode($atts = array()) {
     global $resourcesFile, $searchImg, $phoneImg;
 
-    // Verify file existence
     if (!file_exists($resourcesFile)) {
         return '<div class="notice notice-error">Resource file not found: ' . esc_html($resourcesFile) . '</div>';
+    }
+
+    if (!is_readable($resourcesFile)) {
+        return '<div class="notice notice-error">Resource file is not readable: ' . esc_html($resourcesFile) . '</div>';
     }
 
     // Handle search and filtering
@@ -170,7 +158,8 @@ function sanitize_tag_array($tags) {
     echo '<div class="tags-container" id="filterTags">';
     $allTags = array();
     $handle = fopen($resourcesFile, 'r');
-    if ($handle !== false) {
+    
+    try {
         while (($row = fgetcsv($handle)) !== false) {
             if (isset($row[3])) {
                 $tags = array_map('trim', explode(',', $row[3]));
@@ -181,21 +170,26 @@ function sanitize_tag_array($tags) {
                 }
             }
         }
+    } catch (Exception $e) {
         fclose($handle);
-        sort($allTags);
+        return '<div class="notice notice-error">Error processing tags: ' . esc_html($e->getMessage()) . '</div>';
+    }
+    
+    fclose($handle);
+    sort($allTags);
 
-        foreach ($allTags as $tag) {
-            if (!empty($tag)) {
-                $isSelected = in_array($tag, $selectedTags) ? 'selected' : '';
-                printf(
-                    '<button type="button" class="tag %s" data-tag="%s">%s</button>',
-                    esc_attr($isSelected),
-                    esc_attr($tag),
-                    esc_html($tag)
-                );
-            }
+    foreach ($allTags as $tag) {
+        if (!empty($tag)) {
+            $isSelected = in_array($tag, $selectedTags) ? 'selected' : '';
+            printf(
+                '<button type="button" class="tag %s" data-tag="%s">%s</button>',
+                esc_attr($isSelected),
+                esc_attr($tag),
+                esc_html($tag)
+            );
         }
     }
+    
     echo '</div>'; // Close tags-container
     echo '</div>'; // Close resources-search-container
 
@@ -210,9 +204,9 @@ function sanitize_tag_array($tags) {
     
     // Read and filter data
     $fileHandle = fopen($resourcesFile, 'r');
-    if ($fileHandle !== false) {
-        $headers = fgetcsv($fileHandle);
-        
+    $headers = fgetcsv($fileHandle);
+    
+    try {
         while (($row = fgetcsv($fileHandle)) !== false) {
             if (isset($row[0]) && strpos($row[0], '#') === 0) {
                 continue;
@@ -220,7 +214,6 @@ function sanitize_tag_array($tags) {
             
             $keywords = isset($row[3]) ? array_map('trim', explode(',', $row[3])) : array();
             
-            // Apply search and tag filters
             $matchesSearch = empty($searchTerms) || array_reduce($searchTerms, function($carry, $term) use ($row) {
                 return $carry && stripos(implode(' ', $row), $term) !== false;
             }, true);
@@ -234,15 +227,16 @@ function sanitize_tag_array($tags) {
                 $totalRows++;
             }
         }
+    } catch (Exception $e) {
         fclose($fileHandle);
+        return '<div class="notice notice-error">Error processing data: ' . esc_html($e->getMessage()) . '</div>';
     }
     
-    // Calculate total pages
-    $totalPages = max(1, ceil($totalRows / $rowsPerPage));
+    fclose($fileHandle);
     
-    // Ensure current page is within bounds
-    $currentPage = min($currentPage, $totalPages);
-    $currentPage = max(1, $currentPage);
+    // Calculate total pages and ensure current page is valid
+    $totalPages = max(1, ceil($totalRows / $rowsPerPage));
+    $currentPage = min(max(1, $currentPage), $totalPages);
     
     // Slice the filtered rows for current page
     $paginatedRows = array_slice($filteredRows, $startRow, $rowsPerPage);
@@ -260,10 +254,8 @@ function sanitize_tag_array($tags) {
         $keywords = isset($row[3]) ? array_map('trim', explode(',', $row[3])) : array();
         $website = isset($row[4]) ? $row[4] : '';
 
-        // Create table row
         echo '<tr>';
         
-        // Resource column with website link
         echo '<td>';
         if (!empty($website)) {
             echo '<a href="' . esc_url($website) . '" target="_blank" rel="noopener noreferrer">' . 
@@ -273,7 +265,6 @@ function sanitize_tag_array($tags) {
         }
         echo '</td>';
         
-        // Combined description column with phone number if present
         echo '<td>';
         if (!empty($phoneNum)) {
             $phoneIconHtml = '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . 'media/phone.svg') . 
@@ -285,7 +276,6 @@ function sanitize_tag_array($tags) {
         echo '<div class="description">' . esc_html($description) . '</div>';
         echo '</td>';
         
-        // Keywords column with clickable tags
         echo '<td><div class="tag-container">';
         foreach ($keywords as $keyword) {
             if (!empty($keyword)) {
@@ -310,7 +300,6 @@ function sanitize_tag_array($tags) {
     if ($totalRows > $rowsPerPage) {
         echo '<div class="pagination" role="navigation" aria-label="Resource list pagination">';
         
-        // Previous page
         if ($currentPage > 1) {
             printf(
                 '<button type="button" class="page-np" onclick="changePage(%d)" aria-label="Go to previous page">&lt;</button>',
@@ -318,7 +307,6 @@ function sanitize_tag_array($tags) {
             );
         }
         
-        // Page numbers
         $paginationRange = 2;
         for ($i = max(1, $currentPage - $paginationRange); 
              $i <= min($totalPages, $currentPage + $paginationRange); $i++) {
@@ -335,7 +323,6 @@ function sanitize_tag_array($tags) {
             }
         }
         
-        // Next page
         if ($currentPage < $totalPages) {
             printf(
                 '<button type="button" class="page-np" onclick="changePage(%d)" aria-label="Go to next page">&gt;</button>',
@@ -351,14 +338,9 @@ function sanitize_tag_array($tags) {
     return ob_get_clean();
 }
 
-
-//--------------------------------------------------------------------------------------------
-// Add admin menu
+// Admin menu functions
 add_action('admin_menu', 'dbPlugin_pluginMenu');
 
-/**
- * Add plugin menu to WordPress admin
- */
 function dbPlugin_pluginMenu() {
     $hook = add_menu_page(
         'Database Plugin Instructions',
@@ -370,9 +352,6 @@ function dbPlugin_pluginMenu() {
     add_action("load-$hook", 'dbPlugin_add_help_tab');
 }
 
-/**
- * Display plugin instructions in admin
- */
 function dbPlugin_displayInstructions() {
     global $docsFile;
     $fileContents = file_get_contents($docsFile);
@@ -383,9 +362,6 @@ function dbPlugin_displayInstructions() {
     }
 }
 
-/**
- * Add help tab to plugin page
- */
 function dbPlugin_add_help_tab() {
     $screen = get_current_screen();
     $screen->add_help_tab(array(
