@@ -164,6 +164,7 @@ function sanitize_tag_array($tags) {
     echo '<span>×</span> Reset Filters';
     echo '</button>';
     echo '</div>';
+    echo '<div class="result-count"></div>';
 
     // Display tags section
     echo '<div class="tags-container" id="filterTags">';

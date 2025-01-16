@@ -8,6 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let resources = [];
     let selectedTags = new Set();
     
+    // Initialize selectedTags from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlTags = urlParams.getAll('tags');
+    if (urlTags.length > 0) {
+        urlTags.forEach(tag => selectedTags.add(tag));
+    }
+    
     // Ensure dbPluginData is available
     if (typeof dbPluginData === 'undefined') {
         console.error('dbPluginData not found. Please check WordPress plugin configuration.');
@@ -20,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.addEventListener('input', debounce(filterResources, 300));
     }
 
-    // Load resources via AJAX
+
+    // Update the loadResources function
     async function loadResources() {
         try {
             const formData = new FormData();
@@ -41,7 +49,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success && Array.isArray(data.data)) {
                 resources = data.data;
                 console.log('Resources loaded:', resources.length);
-                initializeTags();
+                await initializeTags();
+                
+                // Initialize search from URL if present
+                const urlParams = new URLSearchParams(window.location.search);
+                const searchQuery = urlParams.get('kw');
+                if (searchQuery && searchInput) {
+                    searchInput.value = searchQuery;
+                }
+                
                 filterResources();
             } else {
                 throw new Error('Invalid response format');
@@ -154,6 +170,15 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.tag').forEach(tag => {
             tag.classList.remove('selected');
         });
+        
+        // Clear URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete('kw');
+        urlParams.delete('tags');
+        urlParams.delete('pg');
+        const newUrl = window.location.pathname;
+        window.history.pushState({}, '', newUrl);
+        
         filterResources();
     };
 
