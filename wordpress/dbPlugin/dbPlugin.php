@@ -124,12 +124,8 @@ function sanitize_tag_array($tags) {
 function displayResourcesShortcode($atts = array()) {
     global $resourcesFile, $searchImg, $phoneImg;
 
-    if (!file_exists($resourcesFile)) {
-        return '<div class="notice notice-error">Resource file not found: ' . esc_html($resourcesFile) . '</div>';
-    }
-
-    if (!is_readable($resourcesFile)) {
-        return '<div class="notice notice-error">Resource file is not readable: ' . esc_html($resourcesFile) . '</div>';
+    if (!file_exists($resourcesFile) || !is_readable($resourcesFile)) {
+        return '<div class="notice notice-error">Resource file not found or not readable: ' . esc_html($resourcesFile) . '</div>';
     }
 
     // Handle search and filtering
@@ -137,30 +133,27 @@ function displayResourcesShortcode($atts = array()) {
     $searchTerms = array_filter(explode(' ', $searchQuery));
     $selectedTags = isset($_GET['tags']) ? sanitize_tag_array($_GET['tags']) : array();
 
-    ob_start();
-
-    // Display search form
-    echo '<div class="resources-search-container">';
-    echo '<div class="search-controls">';
-    echo '<div class="search-wrapper">';
-    echo '<input type="text" id="resourceSearch" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
-    echo '<button type="button" class="search-button" aria-label="Search">';
-    echo '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . 'media/search.svg') . '" alt="Search">';
-    echo '</button>';
-    echo '</div>';
-    echo '<button type="button" class="reset-button" onclick="resetFilters()">';
-    echo '<span>×</span> Reset Filters';
-    echo '</button>';
-    echo '</div>';
-    echo '<div class="result-count"></div>';
-
-    // Display tags section
-    echo '<div class="tags-container" id="filterTags">';
+    // Initialize counters and arrays
+    $totalRows = 0;
+    $filteredRows = array();
     $allTags = array();
-    $handle = fopen($resourcesFile, 'r');
-    
+
+    // Read and process data once
+    $fileHandle = fopen($resourcesFile, 'r');
+    if ($fileHandle === false) {
+        return '<div class="notice notice-error">Failed to open resource file</div>';
+    }
+
     try {
-        while (($row = fgetcsv($handle)) !== false) {
+        $headers = fgetcsv($fileHandle);
+        
+        while (($row = fgetcsv($fileHandle)) !== false) {
+            // Skip commented rows
+            if (isset($row[0]) && strpos($row[0], '#') === 0) {
+                continue;
+            }
+            
+            // Collect tags
             if (isset($row[3])) {
                 $tags = array_map('trim', explode(',', $row[3]));
                 foreach ($tags as $tag) {
@@ -169,51 +162,10 @@ function displayResourcesShortcode($atts = array()) {
                     }
                 }
             }
-        }
-    } catch (Exception $e) {
-        fclose($handle);
-        return '<div class="notice notice-error">Error processing tags: ' . esc_html($e->getMessage()) . '</div>';
-    }
-    
-    fclose($handle);
-    sort($allTags);
 
-    foreach ($allTags as $tag) {
-        if (!empty($tag)) {
-            $isSelected = in_array($tag, $selectedTags) ? 'selected' : '';
-            printf(
-                '<button type="button" class="tag %s" data-tag="%s">%s</button>',
-                esc_attr($isSelected),
-                esc_attr($tag),
-                esc_html($tag)
-            );
-        }
-    }
-    
-    echo '</div>'; // Close tags-container
-    echo '</div>'; // Close resources-search-container
-
-    // Set up pagination variables
-    $rowsPerPage = 10;
-    $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
-    $startRow = ($currentPage - 1) * $rowsPerPage;
-    
-    // Initialize counters and arrays
-    $totalRows = 0;
-    $filteredRows = array();
-    
-    // Read and filter data
-    $fileHandle = fopen($resourcesFile, 'r');
-    $headers = fgetcsv($fileHandle);
-    
-    try {
-        while (($row = fgetcsv($fileHandle)) !== false) {
-            if (isset($row[0]) && strpos($row[0], '#') === 0) {
-                continue;
-            }
-            
             $keywords = isset($row[3]) ? array_map('trim', explode(',', $row[3])) : array();
             
+            // Apply filters
             $matchesSearch = empty($searchTerms) || array_reduce($searchTerms, function($carry, $term) use ($row) {
                 return $carry && stripos(implode(' ', $row), $term) !== false;
             }, true);
@@ -233,20 +185,61 @@ function displayResourcesShortcode($atts = array()) {
     }
     
     fclose($fileHandle);
-    
-    // Calculate total pages and ensure current page is valid
+    sort($allTags);
+
+    // Set up pagination
+    $rowsPerPage = 10;
     $totalPages = max(1, ceil($totalRows / $rowsPerPage));
-    $currentPage = min(max(1, $currentPage), $totalPages);
+    $currentPage = isset($_GET['pg']) ? min(max(1, intval($_GET['pg'])), $totalPages) : 1;
+    $startRow = ($currentPage - 1) * $rowsPerPage;
     
-    // Slice the filtered rows for current page
+    // Get rows for current page
     $paginatedRows = array_slice($filteredRows, $startRow, $rowsPerPage);
-    
-    // Display the table
+
+    ob_start();
+
+    // Display search form
+    echo '<div class="resources-search-container">';
+    echo '<div class="search-controls">';
+    echo '<form class="search-wrapper">';  // Removed onsubmit="return false;"
+    echo '<input type="text" id="resourceSearch" name="kw" placeholder="Search database..." value="' . esc_attr($searchQuery) . '">';
+    echo '<button type="submit" class="search-button" aria-label="Search">';
+    echo '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . 'media/search.svg') . '" alt="Search">';
+    echo '</button>';
+    echo '</form>';
+    echo '<button type="button" class="reset-button" onclick="resetFilters()">';
+    echo '<span>×</span> Reset Filters';
+    echo '</button>';
+    echo '</div>';
+
+    // Updated results count message
+    $countMessage = ($totalRows === count($filteredRows)) 
+        ? sprintf('Showing all %d resources', $totalRows)
+        : sprintf('Showing %d filtered resources', $totalRows);
+    echo '<div class="result-count">' . esc_html($countMessage) . '</div>';
+
+    // Display tags
+    echo '<div class="tags-container" id="filterTags">';
+    foreach ($allTags as $tag) {
+        if (!empty($tag)) {
+            $isSelected = in_array($tag, $selectedTags) ? 'selected' : '';
+            printf(
+                '<button type="button" class="tag %s" data-tag="%s">%s</button>',
+                esc_attr($isSelected),
+                esc_attr($tag),
+                esc_html($tag)
+            );
+        }
+    }
+    echo '</div>'; // Close tags-container
+    echo '</div>'; // Close resources-search-container
+
+    // Display table
     echo '<div id="resourceTableContainer">';
     echo '<table class="csv-table">';
     echo '<thead><tr><th>Resource</th><th>Resource Description</th><th>Keywords</th></tr></thead>';
     echo '<tbody id="resourceTableBody">';
-    
+
     foreach ($paginatedRows as $row) {
         $resource = isset($row[0]) ? $row[0] : '';
         $phoneNum = isset($row[1]) ? $row[1] : '';
@@ -255,7 +248,6 @@ function displayResourcesShortcode($atts = array()) {
         $website = isset($row[4]) ? $row[4] : '';
 
         echo '<tr>';
-        
         echo '<td>';
         if (!empty($website)) {
             echo '<a href="' . esc_url($website) . '" target="_blank" rel="noopener noreferrer">' . 
@@ -290,13 +282,12 @@ function displayResourcesShortcode($atts = array()) {
             }
         }
         echo '</div></td>';
-        
         echo '</tr>';
     }
     
     echo '</tbody></table>';
     
-    // Add pagination controls if needed
+    // Add pagination controls
     if ($totalRows > $rowsPerPage) {
         echo '<div class="pagination" role="navigation" aria-label="Resource list pagination">';
         
