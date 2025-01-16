@@ -139,18 +139,25 @@ function sanitize_tag_array($tags) {
 
 function displayResourcesShortcode($atts = array()) {
     global $resourcesFile, $searchImg, $phoneImg;
-    
-    // Verify file existence checks remain the same...
+
+    // Verify file existence
+    if (!file_exists($resourcesFile)) {
+        return '<div class="notice notice-error">Resource file not found: ' . esc_html($resourcesFile) . '</div>';
+    }
+
+    // Handle search and filtering
+    $searchQuery = isset($_GET['kw']) ? sanitize_text_field($_GET['kw']) : '';
+    $searchTerms = array_filter(explode(' ', $searchQuery));
+    $selectedTags = isset($_GET['tags']) ? sanitize_tag_array($_GET['tags']) : array();
 
     // Set up pagination variables
     $rowsPerPage = 10;
     $currentPage = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
     $startRow = ($currentPage - 1) * $rowsPerPage;
     
-    // Initialize counters
+    // Initialize counters and arrays
     $totalRows = 0;
-    $displayedRows = 0;
-    $filteredRows = [];
+    $filteredRows = array();
     
     // Read and filter data first
     $fileHandle = fopen($resourcesFile, 'r');
@@ -182,7 +189,7 @@ function displayResourcesShortcode($atts = array()) {
     }
     
     // Calculate total pages
-    $totalPages = ceil($totalRows / $rowsPerPage);
+    $totalPages = max(1, ceil($totalRows / $rowsPerPage));
     
     // Ensure current page is within bounds
     $currentPage = min($currentPage, $totalPages);
@@ -191,13 +198,64 @@ function displayResourcesShortcode($atts = array()) {
     // Slice the filtered rows for current page
     $paginatedRows = array_slice($filteredRows, $startRow, $rowsPerPage);
     
+    ob_start();
+    
+    // Display search form and tags (existing code remains the same)
+    
     // Display the table with paginated rows
     echo '<table class="csv-table">';
     echo '<thead><tr><th>Resource</th><th>Resource Description</th><th>Keywords</th></tr></thead>';
     echo '<tbody id="resourceTableBody">';
     
     foreach ($paginatedRows as $row) {
-        // Display row code remains the same...
+        $resource = isset($row[0]) ? $row[0] : '';
+        $phoneNum = isset($row[1]) ? $row[1] : '';
+        $description = isset($row[2]) ? $row[2] : '';
+        $keywords = isset($row[3]) ? array_map('trim', explode(',', $row[3])) : array();
+        $website = isset($row[4]) ? $row[4] : '';
+
+        // Create table row
+        echo '<tr>';
+        
+        // Resource column with website link
+        echo '<td>';
+        if (!empty($website)) {
+            echo '<a href="' . esc_url($website) . '" target="_blank" rel="noopener noreferrer">' . 
+                 esc_html($resource) . '</a>';
+        } else {
+            echo esc_html($resource);
+        }
+        echo '</td>';
+        
+        // Combined description column with phone number if present
+        echo '<td>';
+        if (!empty($phoneNum)) {
+            $phoneIconHtml = '<img src="' . esc_url(plugin_dir_url(DBPLUGIN_FILE) . 'media/phone.svg') . 
+                            '" alt="Phone" class="phone-icon">';
+            $phoneNumHtml = '<div class="phone-num-container">' . $phoneIconHtml . 
+                           '<span class="phone-num">' . esc_html($phoneNum) . '</span></div>';
+            echo $phoneNumHtml;
+        }
+        echo '<div class="description">' . esc_html($description) . '</div>';
+        echo '</td>';
+        
+        // Keywords column with clickable tags
+        echo '<td><div class="tag-container">';
+        foreach ($keywords as $keyword) {
+            if (!empty($keyword)) {
+                $isSelected = in_array($keyword, $selectedTags) ? 'selected' : '';
+                printf(
+                    '<button type="button" class="table-tag %s" onclick="toggleTagFilter(\'%s\')" data-tag="%s">%s</button>',
+                    esc_attr($isSelected),
+                    esc_attr($keyword),
+                    esc_attr($keyword),
+                    esc_html($keyword)
+                );
+            }
+        }
+        echo '</div></td>';
+        
+        echo '</tr>';
     }
     
     echo '</tbody></table>';

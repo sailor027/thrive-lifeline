@@ -137,14 +137,13 @@ document.addEventListener('DOMContentLoaded', function() {
         updateResultCount(visibleCount);
     }
 
-    // Update result count display
-    function updateResultCount() {
-        const visibleRows = document.querySelectorAll('#resourceTableBody tr[style=""]').length;
+    // Update the updateResultCount function to use the parameter
+    function updateResultCount(visibleCount) {
         const totalRows = document.querySelectorAll('#resourceTableBody tr').length;
         const countDisplay = document.querySelector('.result-count');
         
         if (countDisplay) {
-            countDisplay.textContent = `Showing ${visibleRows} of ${totalRows} resources`;
+            countDisplay.textContent = `Showing ${visibleCount} of ${totalRows} resources`;
         }
     }
 
