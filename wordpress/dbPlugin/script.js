@@ -15,18 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Set up search form handling
-    const searchInput = document.getElementById('resourceSearch');
-    const searchForm = document.querySelector('.search-wrapper');
-    
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitSearch();
-        });
-    }
-
-    // Handle tag selection - for both filter area and table tags
+    // Set up tag handlers
     function initializeTagHandlers() {
         document.querySelectorAll('.tag, .table-tag').forEach(tag => {
             tag.addEventListener('click', function(e) {
@@ -38,20 +27,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Toggle tag selection
+    // Toggle tag selection with UI update
     function toggleTag(tagValue) {
-        const decodedTag = decodeURIComponent(tagValue);
-        if (selectedTags.has(decodedTag)) {
-            selectedTags.delete(decodedTag);
-            updateTagState(decodedTag, false);
+        if (selectedTags.has(tagValue)) {
+            selectedTags.delete(tagValue);
+            updateTagState(tagValue, false);
         } else {
-            selectedTags.add(decodedTag);
-            updateTagState(decodedTag, true);
+            selectedTags.add(tagValue);
+            updateTagState(tagValue, true);
         }
         submitSearch();
     }
 
-    // Update tag state in UI
+    // Update all instances of a tag in the UI
     function updateTagState(tagValue, isSelected) {
         document.querySelectorAll(`[data-tag="${tagValue}"]`)
             .forEach(element => {
@@ -71,9 +59,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add selected tags
         if (selectedTags.size > 0) {
-            selectedTags.forEach(tag => {
+            Array.from(selectedTags).forEach(tag => {
                 urlParams.append('tags', encodeURIComponent(tag));
             });
+        }
+
+        // Preserve current page if it exists
+        const currentPage = new URLSearchParams(window.location.search).get('pg');
+        if (currentPage) {
+            urlParams.set('pg', currentPage);
         }
         
         // Navigate to new URL
@@ -81,28 +75,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = newUrl;
     }
 
-    // Reset all filters
-    window.resetFilters = function() {
-        window.location.href = window.location.pathname;
-    };
-
-    // Handle pagination
-    window.changePage = function(page) {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('pg', page);
-        window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
-    };
-
-    // Toggle tag from table - direct implementation
-    window.toggleTagFilter = function(tag) {
-        toggleTag(tag); // tag is already encoded at this point
-    };
-
     // Initialize tag handlers
     initializeTagHandlers();
-
-    // Handle browser navigation
-    window.addEventListener('popstate', function() {
-        window.location.reload();
-    });
 });

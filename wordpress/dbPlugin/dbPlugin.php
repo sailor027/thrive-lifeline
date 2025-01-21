@@ -114,12 +114,20 @@ function handle_get_resources() {
 // Register shortcode
 add_shortcode('displayResources', 'displayResourcesShortcode');
 
+// function sanitize_tag_array($tags) {
+//     if (!is_array($tags)) {
+//         return array();
+//     }
+//     return array_map(function($tag) {
+//         return trim(sanitize_text_field(urldecode($tag)));
+//     }, $tags);
+// }
 function sanitize_tag_array($tags) {
     if (!is_array($tags)) {
         return array();
     }
     return array_map(function($tag) {
-        return trim(sanitize_text_field(urldecode($tag)));
+        return sanitize_text_field(urldecode($tag));
     }, $tags);
 }
 
@@ -171,16 +179,21 @@ function displayResourcesShortcode($atts = array()) {
                 return $carry && stripos(implode(' ', $row), $term) !== false;
             }, true);
             
+            
             $matchesTags = empty($selectedTags);
+            // if (!empty($selectedTags) && isset($row[3])) {
+            //     $rowTags = array_map('trim', explode(',', $row[3]));
+            //     $matchesTags = true;
+            //     foreach ($selectedTags as $tag) {
+            //         if (!in_array($tag, $rowTags)) {
+            //             $matchesTags = false;
+            //             break;
+            //         }
+            //     }
+            // }
             if (!empty($selectedTags) && isset($row[3])) {
                 $rowTags = array_map('trim', explode(',', $row[3]));
-                $matchesTags = true;
-                foreach ($selectedTags as $tag) {
-                    if (!in_array($tag, $rowTags)) {
-                        $matchesTags = false;
-                        break;
-                    }
-                }
+                $matchesTags = count(array_intersect($selectedTags, $rowTags)) === count($selectedTags);
             }
             
             if ($matchesSearch && $matchesTags) {
