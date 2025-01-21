@@ -40,12 +40,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Toggle tag selection
     function toggleTag(tagValue) {
-        if (selectedTags.has(tagValue)) {
-            selectedTags.delete(tagValue);
-            updateTagState(tagValue, false);
+        const decodedTag = decodeURIComponent(tagValue);
+        if (selectedTags.has(decodedTag)) {
+            selectedTags.delete(decodedTag);
+            updateTagState(decodedTag, false);
         } else {
-            selectedTags.add(tagValue);
-            updateTagState(tagValue, true);
+            selectedTags.add(decodedTag);
+            updateTagState(decodedTag, true);
         }
         submitSearch();
     }
@@ -70,15 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add selected tags
         if (selectedTags.size > 0) {
-            Array.from(selectedTags).forEach(tag => {
+            selectedTags.forEach(tag => {
                 urlParams.append('tags', encodeURIComponent(tag));
             });
-        }
-
-        // Preserve current page if it exists
-        const currentPage = new URLSearchParams(window.location.search).get('pg');
-        if (currentPage) {
-            urlParams.set('pg', currentPage);
         }
         
         // Navigate to new URL
@@ -100,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Toggle tag from table - direct implementation
     window.toggleTagFilter = function(tag) {
-        toggleTag(decodeURIComponent(tag));
+        toggleTag(tag); // tag is already encoded at this point
     };
 
     // Initialize tag handlers

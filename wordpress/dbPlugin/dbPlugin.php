@@ -4,7 +4,7 @@
 Plugin Name: Database Plugin
 Plugin URI: https://github.com/sailor027/thrive-lifeline/tree/main/wordpress/dbPlugin
 Description: WP plugin to read a CSV file and display its contents in PHP.
-Version: 2.9.4
+Version: 2.9.6
 Date: 2025.01.20
 Author: Ko Horiuchi
 License: MIT
@@ -119,7 +119,7 @@ function sanitize_tag_array($tags) {
         return array();
     }
     return array_map(function($tag) {
-        return sanitize_text_field(urldecode($tag));
+        return trim(sanitize_text_field(urldecode($tag)));
     }, $tags);
 }
 
@@ -166,18 +166,21 @@ function displayResourcesShortcode($atts = array()) {
             }
 
             // Check if row matches selected filters
-            $matchesSearch = empty($searchTerms);
-            foreach ($searchTerms as $term) {
-                if (stripos(implode(' ', $row), $term) !== false) {
-                    $matchesSearch = true;
-                    break;
-                }
-            }
+            // AND operator for search terms
+            $matchesSearch = empty($searchTerms) || array_reduce($searchTerms, function($carry, $term) use ($row) {
+                return $carry && stripos(implode(' ', $row), $term) !== false;
+            }, true);
             
             $matchesTags = empty($selectedTags);
             if (!empty($selectedTags) && isset($row[3])) {
                 $rowTags = array_map('trim', explode(',', $row[3]));
-                $matchesTags = count(array_intersect($selectedTags, $rowTags)) === count($selectedTags);
+                $matchesTags = true;
+                foreach ($selectedTags as $tag) {
+                    if (!in_array($tag, $rowTags)) {
+                        $matchesTags = false;
+                        break;
+                    }
+                }
             }
             
             if ($matchesSearch && $matchesTags) {
