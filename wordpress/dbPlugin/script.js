@@ -6,9 +6,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlTags = urlParams.getAll('tags');
     if (urlTags.length > 0) {
-        urlTags.forEach(tag => selectedTags.add(tag));
+        urlTags.forEach(tag => selectedTags.add(decodeURIComponent(tag)));
         // Ensure UI reflects initial state
-        urlTags.forEach(tag => {
+        selectedTags.forEach(tag => {
             document.querySelectorAll(`[data-tag="${tag}"]`).forEach(tagElement => {
                 tagElement.classList.add('selected');
             });
@@ -26,21 +26,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Handle tag selection
-    document.querySelectorAll('.tag, .table-tag').forEach(tag => {
-        tag.addEventListener('click', function(e) {
-            e.preventDefault();
-            const tagValue = this.getAttribute('data-tag');
-            if (selectedTags.has(tagValue)) {
-                selectedTags.delete(tagValue);
-                updateTagState(tagValue, false);
-            } else {
-                selectedTags.add(tagValue);
-                updateTagState(tagValue, true);
-            }
-            submitSearch();
+    // Handle tag selection - for both filter area and table tags
+    function initializeTagHandlers() {
+        document.querySelectorAll('.tag, .table-tag').forEach(tag => {
+            tag.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const tagValue = this.getAttribute('data-tag');
+                toggleTag(tagValue);
+            });
         });
-    });
+    }
+
+    // Toggle tag selection
+    function toggleTag(tagValue) {
+        if (selectedTags.has(tagValue)) {
+            selectedTags.delete(tagValue);
+            updateTagState(tagValue, false);
+        } else {
+            selectedTags.add(tagValue);
+            updateTagState(tagValue, true);
+        }
+        submitSearch();
+    }
 
     // Update tag state in UI
     function updateTagState(tagValue, isSelected) {
@@ -63,8 +71,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add selected tags
         if (selectedTags.size > 0) {
             Array.from(selectedTags).forEach(tag => {
-                urlParams.append('tags', tag);
+                urlParams.append('tags', encodeURIComponent(tag));
             });
+        }
+
+        // Preserve current page if it exists
+        const currentPage = new URLSearchParams(window.location.search).get('pg');
+        if (currentPage) {
+            urlParams.set('pg', currentPage);
         }
         
         // Navigate to new URL
@@ -84,13 +98,13 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
     };
 
-    // Toggle tag from table
+    // Toggle tag from table - direct implementation
     window.toggleTagFilter = function(tag) {
-        const tagButton = document.querySelector(`.tag[data-tag="${tag}"]`);
-        if (tagButton) {
-            tagButton.click();
-        }
+        toggleTag(decodeURIComponent(tag));
     };
+
+    // Initialize tag handlers
+    initializeTagHandlers();
 
     // Handle browser navigation
     window.addEventListener('popstate', function() {
