@@ -5,7 +5,7 @@ Plugin Name: Database Plugin
 Plugin URI: https://github.com/sailor027/thrive-lifeline/tree/main/wordpress/dbPlugin
 Description: WP plugin to read a CSV file and display its contents in PHP.
 Version: 2.9.4
-Date: 2025.01.16
+Date: 2025.01.20
 Author: Ko Horiuchi
 License: MIT
 */
@@ -118,7 +118,9 @@ function sanitize_tag_array($tags) {
     if (!is_array($tags)) {
         return array();
     }
-    return array_map('sanitize_text_field', $tags);
+    return array_map(function($tag) {
+        return sanitize_text_field(urldecode($tag));
+    }, $tags);
 }
 
 function displayResourcesShortcode($atts = array()) {
@@ -138,7 +140,7 @@ function displayResourcesShortcode($atts = array()) {
     $filteredRows = array();
     $allTags = array();
 
-    // Read and process data once
+    // Read and process data
     $fileHandle = fopen($resourcesFile, 'r');
     if ($fileHandle === false) {
         return '<div class="notice notice-error">Failed to open resource file</div>';
@@ -153,26 +155,30 @@ function displayResourcesShortcode($atts = array()) {
                 continue;
             }
             
-            // Collect tags
+            // Collect tags and clean them
             if (isset($row[3])) {
-                $tags = array_map('trim', explode(',', $row[3]));
-                foreach ($tags as $tag) {
+                $rowTags = array_map('trim', explode(',', $row[3]));
+                foreach ($rowTags as $tag) {
                     if (!empty($tag) && !in_array($tag, $allTags)) {
                         $allTags[] = $tag;
                     }
                 }
             }
 
-            $keywords = isset($row[3]) ? array_map('trim', explode(',', $row[3])) : array();
+            // Check if row matches selected filters
+            $matchesSearch = empty($searchTerms);
+            foreach ($searchTerms as $term) {
+                if (stripos(implode(' ', $row), $term) !== false) {
+                    $matchesSearch = true;
+                    break;
+                }
+            }
             
-            // Apply filters
-            $matchesSearch = empty($searchTerms) || array_reduce($searchTerms, function($carry, $term) use ($row) {
-                return $carry && stripos(implode(' ', $row), $term) !== false;
-            }, true);
-            
-            $matchesTags = empty($selectedTags) || array_reduce($selectedTags, function($carry, $tag) use ($keywords) {
-                return $carry && in_array($tag, array_map('trim', $keywords));
-            }, true);
+            $matchesTags = empty($selectedTags);
+            if (!empty($selectedTags) && isset($row[3])) {
+                $rowTags = array_map('trim', explode(',', $row[3]));
+                $matchesTags = count(array_intersect($selectedTags, $rowTags)) === count($selectedTags);
+            }
             
             if ($matchesSearch && $matchesTags) {
                 $filteredRows[] = $row;

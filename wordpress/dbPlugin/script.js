@@ -27,8 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle tag selection
-    document.querySelectorAll('.tag').forEach(tag => {
-        tag.addEventListener('click', function() {
+    document.querySelectorAll('.tag, .table-tag').forEach(tag => {
+        tag.addEventListener('click', function(e) {
+            e.preventDefault();
             const tagValue = this.getAttribute('data-tag');
             if (selectedTags.has(tagValue)) {
                 selectedTags.delete(tagValue);

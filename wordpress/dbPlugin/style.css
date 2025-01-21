@@ -87,12 +87,12 @@ code {
 .search-wrapper {
     position: relative;
     flex-grow: 1;
+    border-radius: 0.25rem;
 }
 .search-wrapper input {
     width: 100%;
     padding: 0.5rem 2.5rem 0.5rem 1rem;
     border: 2px solid var(--gry);
-    border-radius: 10px;
     font-size: 1rem;
 }
 .search-button {
@@ -254,21 +254,3 @@ button.page-n:hover, button.page-np:hover {
     margin: 0 5px;
 }
 
-/* ============================================================= */
-/* documentation */
-table.date {
-    border: 0;
-    width: 100%;
-    padding: 0;
-}
-table.date td:nth-child(1) {
-    width: 50%;
-    font-weight: bold;
-    padding: 0;
-}
-table.date td:nth-child(2) {
-    color: rgb(80, 80, 80);
-    width: 50%;
-    text-align: right;
-    font-style: italic;
-}
